@@ -1,0 +1,31 @@
+name: Auto-Update Armenian Music Trends & Firehose
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run HAYBEAT live harvester
+        run: python fetch_trends.py
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name "HAYBEAT Auto-Harvester"
+          git config user.email "actions@github.com"
+          git add data/trends_data.json data/trends_data.js
+          git diff --staged --quiet || (git commit -m "chore(data): auto-refresh Armenian music trends & 0+ firehose" && git push)

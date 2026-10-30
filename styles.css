@@ -1,0 +1,290 @@
+/* ==========================================================================
+   HAYBEAT — Радар Трендов Армянской Музыки
+   Custom Design System (Obsidian, Pomegranate Crimson, Apricot Gold, Violet)
+   ========================================================================== */
+
+:root {
+  --bg-main: #090b10;
+  --bg-elevated: #111520;
+  --bg-card: #151a28;
+  --bg-card-hover: #1b2234;
+  --bg-glass: rgba(21, 26, 40, 0.82);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(242, 168, 0, 0.35);
+  --text-primary: #f3f5f9;
+  --text-secondary: #9ba3b8;
+  --text-muted: #646d84;
+  --accent-red: #e11d48;
+  --accent-apricot: #f59e0b;
+  --accent-blue: #3b82f6;
+  --accent-violet: #8b5cf6;
+  --accent-emerald: #10b981;
+  --gradient-armenian: linear-gradient(135deg, #e11d48 0%, #2563eb 50%, #f59e0b 100%);
+  --gradient-fire: linear-gradient(135deg, #f59e0b 0%, #e11d48 100%);
+  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+}
+
+html.light {
+  --bg-main: #f4f6fb;
+  --bg-elevated: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8faff;
+  --bg-glass: rgba(255, 255, 255, 0.88);
+  --border-subtle: rgba(15, 23, 42, 0.09);
+  --border-highlight: rgba(225, 29, 72, 0.35);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --shadow-card: 0 10px 25px -8px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  padding-bottom: 108px;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 163, 184, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 163, 184, 0.45);
+}
+
+/* Armenian Flag Top Ribbon */
+.arm-ribbon {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #d90012 0%, #d90012 33.3%, #0033a0 33.3%, #0033a0 66.6%, #f2a800 66.6%, #f2a800 100%);
+}
+
+/* Glass Header */
+.glass-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Surface Cards */
+.hb-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.hb-card:hover {
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.hb-card-interactive:hover {
+  transform: translateY(-2px);
+  background: var(--bg-card-hover);
+  border-color: var(--border-highlight);
+}
+
+/* Playing Track Highlight */
+.track-is-playing {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 12px 28px -8px rgba(225, 29, 72, 0.35) !important;
+}
+
+/* Equalizer Animation for Playing Track */
+.eq-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+.eq-bar {
+  width: 3px;
+  background: #f59e0b;
+  border-radius: 2px;
+  animation: eqBounce 0.8s infinite ease-in-out alternate;
+}
+.eq-bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.eq-bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes eqBounce {
+  0% { height: 3px; }
+  100% { height: 14px; }
+}
+
+/* Navigation Tabs */
+.nav-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.nav-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+.nav-tab.active {
+  color: #ffffff;
+  background: var(--gradient-fire);
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
+}
+
+/* Filter Chips */
+.chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.chip-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.chip-btn.active {
+  color: #fff;
+  background: #e11d48;
+  border-color: #e11d48;
+  box-shadow: 0 2px 10px rgba(225, 29, 72, 0.3);
+}
+
+/* Trend Score Ring */
+.score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.score-high {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.score-mid {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+.score-base {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Persistent Bottom Audio Player */
+.player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(13, 17, 27, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(245, 158, 11, 0.28);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
+}
+
+html.light .player-bar {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -8px 25px rgba(15, 23, 42, 0.1);
+}
+
+/* Range Input Styling */
+input[type="range"].hb-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].hb-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #f59e0b;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+}
+
+/* Cover Art Overlay */
+.cover-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 11, 16, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.cover-wrap:hover .cover-overlay,
+.cover-wrap.active-cover .cover-overlay {
+  opacity: 1;
+}
+
+/* Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-fast {
+  animation: spin 0.8s linear infinite;
+}
