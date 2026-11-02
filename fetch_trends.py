@@ -937,7 +937,7 @@ def parse_age_hours(pub_str="", release_date=""):
     if release_date and len(release_date) >= 10:
         try:
             dt = datetime.date.fromisoformat(release_date[:10])
-            today = datetime.date(2026, 10, 30)
+            today = datetime.date.today()
             days = max(0, (today - dt).days)
             return days * 24 + 12
         except Exception:
@@ -961,7 +961,7 @@ def is_valid_armenian_music_item(title, artist_or_channel):
     combined = f"{artist_or_channel} {title}"
     low = combined.lower()
 
-    # Exclude non-music political/news/sports videos or Unicode spam
+    # Exclude non-music political/news/sports/vlogs/recipes videos or Unicode spam
     bad_patterns = [
         "wrestler", "blind auditions", "the voice of bulgaria", "итоги детского",
         "recap", "2007-2026", "ֆիլմ", "հումորային", "lovestroke rodeo",
@@ -970,6 +970,10 @@ def is_valid_armenian_music_item(title, artist_or_channel):
         "փաշինյան", "սահմանադրության", "կառավարություն", "պատգամավոր",
         "նախագահ", "ոստիկան", "դատարան", "քաղաքական", "մամուլի", "ասուլիս",
         "ուղիղ․", "factor tv", "azatutyun", "civilnet", "armenia tv",
+        "horman original", "sozan original", "sabor nomadic", "leila life",
+        "süß und gesund", "omas kuchengeheimnis", "wandering & wondering",
+        "գերեզմանի", "կարկանդակ", "շոկոլադե տորթ", "թխվածք ու պերֆյում",
+        "#новости", "новости", "շտապ", "ընտրություն", "թրամփ", "один день",
     ]
     if any(b in low for b in bad_patterns):
         return False
@@ -1312,12 +1316,22 @@ def harvest_unfiltered_new_releases(enriched_chart_tracks):
                 seen_norm.add(nk)
                 combined[item["id"]] = item
 
+    now_ts = int(time.time())
     firehose_list = list(combined.values())
-    # Sort strictly chronologically by age_hours ascending (newest first, regardless of views!)
-    firehose_list.sort(key=lambda x: (x["age_hours"], x["views"]))
+    for item in firehose_list:
+        item["harvested_at_ts"] = now_ts
+        item["is_ai"] = detect_is_ai(item.get("full_title", ""), item.get("channel", ""))
+
+    # Sort chronologically by age_hours ascending; within the same hour bucket, show items with >0 views before 0-view items
+    firehose_list.sort(
+        key=lambda x: (
+            x.get("age_hours", 999),
+            0 if x.get("views", 0) > 0 else 1,
+            -x.get("views", 0) if x.get("age_hours", 999) <= 6 else x.get("views", 0),
+        )
+    )
     for idx, item in enumerate(firehose_list, 1):
         item["firehose_rank"] = idx
-        item["is_ai"] = detect_is_ai(item.get("full_title", ""), item.get("channel", ""))
 
     print(f"      Harvested {len(firehose_list)} unfiltered new Armenian releases (including {sum(1 for x in firehose_list if x['tier_id']=='micro')} micro/0-chart releases)!")
     return firehose_list
@@ -1382,6 +1396,7 @@ def build_artists_summary(enriched_tracks):
 
 def harvest_all(output_dir):
     t0 = time.time()
+    now_ts = int(t0)
     apple_rows = parse_kworb_apple_am()
     yt_rows = parse_kworb_youtube_am()
     itunes_rows = parse_kworb_itunes_am()
@@ -1391,7 +1406,7 @@ def harvest_all(output_dir):
     artists_summary = build_artists_summary(enriched_tracks)
     unfiltered_firehose = harvest_unfiltered_new_releases(enriched_tracks)
 
-    # Merge with any previously saved firehose_releases on disk so a refresh only adds new items and never loses tracks
+    # Merge with previously saved firehose_releases on disk, properly aging older items so stale 0-view items don't freeze at 1h ago
     existing_json_path = os.path.join(output_dir, "trends_data.json")
     if os.path.exists(existing_json_path):
         try:
@@ -1399,13 +1414,53 @@ def harvest_all(output_dir):
                 old_data = json.load(ef)
             old_fh = old_data.get("firehose_releases") or []
             seen_fh_ids = {x["id"] for x in unfiltered_firehose}
+            seen_fh_norm = {
+                re.sub(r"[^a-zа-яё\u0530-\u058F0-9]", "", (x.get("artist", "") + x.get("title", "")).lower())
+                for x in unfiltered_firehose
+            }
             for old_item in old_fh:
-                if old_item.get("id") and old_item["id"] not in seen_fh_ids:
-                    if is_valid_armenian_music_item(old_item.get("full_title", ""), old_item.get("channel", "")):
-                        old_item["is_ai"] = detect_is_ai(old_item.get("full_title", ""), old_item.get("channel", ""))
-                        unfiltered_firehose.append(old_item)
-                        seen_fh_ids.add(old_item["id"])
-            unfiltered_firehose.sort(key=lambda x: (x.get("age_hours", 999), x.get("views", 0)))
+                oid = old_item.get("id")
+                if not oid or oid in seen_fh_ids:
+                    continue
+                nk = re.sub(r"[^a-zа-яё\u0530-\u058F0-9]", "", (old_item.get("artist", "") + old_item.get("title", "")).lower())
+                if nk and nk in seen_fh_norm:
+                    continue
+                if not is_valid_armenian_music_item(old_item.get("full_title", ""), old_item.get("channel", "")):
+                    continue
+
+                # Age items that were not re-observed in the latest live scrape
+                prev_ts = old_item.get("harvested_at_ts")
+                old_age = int(old_item.get("age_hours", 48))
+                if prev_ts:
+                    elapsed_h = max(6, round((now_ts - int(prev_ts)) / 3600))
+                    old_item["age_hours"] = old_age + elapsed_h
+                else:
+                    # Legacy item from earlier runs without harvested_at_ts: age by at least 48h so frozen "1h ago" items move to their real multi-day age
+                    old_item["age_hours"] = old_age + 48 if old_age < 72 else old_age + 12
+                old_item["harvested_at_ts"] = now_ts
+
+                if old_item["age_hours"] >= 24:
+                    pub_txt = str(old_item.get("published_text", "")).lower()
+                    if any(tok in pub_txt for tok in ("h ago", "hour", "min", "час", "мин", "только что")):
+                        days = max(1, old_item["age_hours"] // 24)
+                        old_item["published_text"] = f"{days}d ago"
+                    if old_item.get("source_id") == "yt_today":
+                        old_item["source_id"] = "yt_week"
+                        old_item["source_label"] = "YouTube • За неделю"
+
+                old_item["is_ai"] = detect_is_ai(old_item.get("full_title", ""), old_item.get("channel", ""))
+                unfiltered_firehose.append(old_item)
+                seen_fh_ids.add(oid)
+                if nk:
+                    seen_fh_norm.add(nk)
+
+            unfiltered_firehose.sort(
+                key=lambda x: (
+                    x.get("age_hours", 999),
+                    0 if x.get("views", 0) > 0 else 1,
+                    -x.get("views", 0) if x.get("age_hours", 999) <= 6 else x.get("views", 0),
+                )
+            )
             for idx, item in enumerate(unfiltered_firehose, 1):
                 item["firehose_rank"] = idx
         except Exception:
@@ -1450,8 +1505,8 @@ def harvest_all(output_dir):
             "tracks_with_audio_preview": sum(1 for t in enriched_tracks if t["preview_url"]),
             "tracks_with_youtube_video": sum(1 for t in enriched_tracks if t["youtube_video_id"]),
             "total_weekly_yt_streams": sum(t["yt_weekly_streams"] for t in enriched_tracks),
-            "top_apple_track": next((t for t in enriched_tracks if t["apple_pos"] == 1), enriched_tracks[0] if enriched_tracks else None),
-            "top_youtube_track": next((t for t in enriched_tracks if t["yt_pos"] == 1), enriched_tracks[0] if enriched_tracks else None),
+            "top_apple_track": min((t for t in enriched_tracks if t.get("apple_pos")), key=lambda x: x["apple_pos"], default=enriched_tracks[0] if enriched_tracks else None),
+            "top_youtube_track": min((t for t in enriched_tracks if t.get("yt_pos")), key=lambda x: x["yt_pos"], default=enriched_tracks[0] if enriched_tracks else None),
         },
         "tracks": enriched_tracks,
         "firehose_releases": unfiltered_firehose,

@@ -67,7 +67,8 @@
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function formatDeltaBadge(deltaStr) {
@@ -184,6 +185,9 @@
     const fhBadge = document.getElementById("badge-count-firehose");
     if (fhBadge) fhBadge.textContent = String((STATE.data.firehose_releases || []).length);
 
+    const frBadge = document.getElementById("badge-count-fresh");
+    if (frBadge) frBadge.textContent = String(getFreshTracks().length);
+
     const aBadge = document.getElementById("badge-count-artists");
     if (aBadge) aBadge.textContent = String((STATE.data.artists || []).length);
   }
@@ -193,8 +197,14 @@
     if (!container || !STATE.data) return;
 
     const tracks = STATE.data.tracks || [];
-    const topApple = tracks.find((t) => t.apple_pos === 1) || tracks[0];
-    const topYT = tracks.find((t) => t.yt_pos === 1) || tracks[0];
+    const topApple =
+      tracks
+        .filter((t) => t.apple_pos)
+        .sort((a, b) => a.apple_pos - b.apple_pos)[0] || tracks[0];
+    const topYT =
+      tracks
+        .filter((t) => t.yt_pos)
+        .sort((a, b) => a.yt_pos - b.yt_pos)[0] || tracks[0];
 
     // Top Risers
     const risers = tracks
@@ -217,9 +227,9 @@
       <div class="hb-card p-4 flex flex-col justify-between relative overflow-hidden">
         <div class="flex items-center justify-between gap-2 mb-3">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-            🍎 #1 Apple Music Армения
+            🍎 #${topApple?.apple_pos || 1} Apple Music Армения
           </span>
-          <span class="text-xs text-[var(--text-secondary)]">Релиз: ${escapeHtml(topApple?.release_date || "Окт 2026")}</span>
+          <span class="text-xs text-[var(--text-secondary)]">Релиз: ${escapeHtml(topApple?.release_date || "2026")}</span>
         </div>
         <div class="flex items-center gap-3.5 my-1">
           <img src="${escapeHtml(topApple?.artwork_url || "")}" alt="" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md flex-shrink-0" />
@@ -230,7 +240,7 @@
               ${escapeHtml(topApple?.artist || "")}
             </p>
             <p class="text-xs text-[var(--text-secondary)] mt-1">
-              YouTube: <strong class="text-[var(--text-primary)]">${fmtCompact(topApple?.youtube_views)}</strong> просм. (${escapeHtml(topApple?.youtube_published || "12д")})
+              YouTube: <strong class="text-[var(--text-primary)]">${fmtCompact(topApple?.youtube_views)}</strong> просм. (${escapeHtml(topApple?.youtube_published || "свежий")})
             </p>
           </div>
         </div>
@@ -250,7 +260,7 @@
       <div class="hb-card p-4 flex flex-col justify-between relative overflow-hidden">
         <div class="flex items-center justify-between gap-2 mb-3">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-            ▶️ #1 YouTube Армения
+            ▶️ #${topYT?.yt_pos || 1} YouTube Армения
           </span>
           <span class="text-xs text-emerald-400 font-bold">+${fmtNum(topYT?.yt_weekly_delta)} за нед.</span>
         </div>
@@ -318,17 +328,23 @@
           ${fhMicroSample
             .map(
               (m) => `
-            <div onclick="window.HB.switchTab('firehose'); window.HB.playFirehoseById('${escapeHtml(m.id)}');"
+            <div onclick="window.HB.openFirehoseUnfiltered(); window.HB.playFirehoseById('${escapeHtml(m.id)}');"
                  class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer text-xs">
               <span class="truncate font-medium"><strong class="text-[var(--text-primary)]">${escapeHtml(m.artist)}</strong> — ${escapeHtml(m.title)}</span>
-              <span class="text-amber-300 font-semibold flex-shrink-0">${m.views > 0 ? m.views + " просм." : "Сингл"}</span>
+              <span class="text-amber-300 font-semibold flex-shrink-0">${
+                m.views > 0
+                  ? fmtNum(m.views) + " просм."
+                  : m.platform === "YouTube"
+                  ? "Новинка • " + escapeHtml(m.published_text)
+                  : "Сингл"
+              }</span>
             </div>
           `
             )
             .join("")}
         </div>
         <div class="pt-2 border-t border-[var(--border-subtle)]">
-          <button onclick="window.HB.switchTab('firehose')"
+          <button onclick="window.HB.openFirehoseUnfiltered()"
                   class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition cursor-pointer">
             📡 Открыть все ${fhAll.length} новинок (от 0 просм.) →
           </button>
@@ -863,7 +879,7 @@
       base = base.filter((x) => x.source_id === STATE.fhSource);
     }
 
-    const q = (STATE.fhSearch || STATE.searchQuery || "").trim().toLowerCase();
+    const q = (STATE.fhSearch || "").trim().toLowerCase();
     if (q) {
       base = base.filter(
         (x) =>
@@ -892,7 +908,13 @@
 
     // Sort
     if (STATE.fhSort === "newest") {
-      base.sort((a, b) => a.age_hours - b.age_hours || a.views - b.views);
+      base.sort((a, b) => {
+        if (a.age_hours !== b.age_hours) return a.age_hours - b.age_hours;
+        const aHasViews = a.views > 0 ? 0 : 1;
+        const bHasViews = b.views > 0 ? 0 : 1;
+        if (aHasViews !== bHasViews) return aHasViews - bHasViews;
+        return a.age_hours <= 6 ? b.views - a.views : a.views - b.views;
+      });
     } else if (STATE.fhSort === "yt_views_asc") {
       base.sort((a, b) => {
         const aYt = a.platform === "YouTube" ? 0 : 1;
@@ -1109,7 +1131,7 @@
 
     const items = getFilteredFirehoseItems();
     const visCount = document.getElementById("visible-tracks-count");
-    if (visCount) visCount.textContent = String(items.length);
+    if (visCount && STATE.activeTab === "firehose") visCount.textContent = String(items.length);
 
     const totalAll = (STATE.data.firehose_releases || []).length;
     const microTotal = (STATE.data.firehose_releases || []).filter((x) => x.tier_id === "micro").length;
@@ -1124,7 +1146,7 @@
           <div class="text-3xl">📡</div>
           <h3 class="text-base font-bold">По выбранным фильтрам новинок не найдено</h3>
           <p class="text-xs text-[var(--text-secondary)]">Попробуйте переключить масштаб на «Все новинки» или сбросить фильтр источника.</p>
-          <button onclick="window.HB.setFirehoseTier('all'); window.HB.setFirehoseSource('all'); window.HB.setFirehoseSearch('');"
+          <button onclick="window.HB.resetFirehoseFilters()"
                   class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white cursor-pointer">
             Показать все новинки потока
           </button>
@@ -1962,12 +1984,33 @@
     renderHeaderStats();
     renderHeroSpotlights();
     renderQuickArtistPills();
+    if (STATE.activeTab !== "firehose") {
+      renderFirehoseTab();
+    }
     renderActiveTab();
   }
 
   // Expose Public API on window.HB
   window.HB = {
     switchTab,
+    openFirehoseUnfiltered() {
+      window.HB.resetFirehoseFilters();
+      switchTab("firehose");
+    },
+    resetFirehoseFilters() {
+      STATE.fhTier = "all";
+      STATE.fhSource = "all";
+      STATE.fhSearch = "";
+      const fhInp = document.getElementById("fh-search-input");
+      if (fhInp) fhInp.value = "";
+      document.querySelectorAll("[data-fh-tier]").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-fh-tier") === "all");
+      });
+      document.querySelectorAll("[data-fh-src]").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-fh-src") === "all");
+      });
+      renderFirehoseTab();
+    },
     setFirehoseTier(tierId) {
       STATE.fhTier = tierId;
       document.querySelectorAll("[data-fh-tier]").forEach((b) => {
@@ -2071,6 +2114,9 @@
       const clearBtn = document.getElementById("btn-clear-search");
       if (clearBtn) clearBtn.classList.toggle("hidden", !STATE.searchQuery);
       if (STATE.activeTab === "firehose") {
+        STATE.fhSearch = STATE.searchQuery;
+        const fhInp = document.getElementById("fh-search-input");
+        if (fhInp && fhInp.value !== STATE.fhSearch) fhInp.value = STATE.fhSearch;
         renderFirehoseTab();
       } else if (STATE.activeTab !== "radar") {
         switchTab("radar");
@@ -2081,6 +2127,9 @@
     clearSearch() {
       const input = document.getElementById("search-input");
       if (input) input.value = "";
+      STATE.fhSearch = "";
+      const fhInp = document.getElementById("fh-search-input");
+      if (fhInp) fhInp.value = "";
       window.HB.onSearchInput("");
     },
     resetAllFilters() {
@@ -2095,6 +2144,7 @@
       if (chk) chk.checked = false;
       document.querySelectorAll("[data-scene]").forEach((b) => b.classList.toggle("active", b.getAttribute("data-scene") === "all"));
       document.querySelectorAll("[data-signal]").forEach((b) => b.classList.toggle("active", b.getAttribute("data-signal") === "all"));
+      window.HB.resetFirehoseFilters();
       renderAll();
     },
     setPlatformChart(src) {
@@ -2182,7 +2232,8 @@
     setupAudioEvents();
     renderAll();
 
-    // Sync with local API server if running
+    // 1. Try syncing with local API server if running
+    let loadedFromApi = false;
     try {
       const resp = await fetch("/api/trends");
       if (resp.ok) {
@@ -2192,11 +2243,29 @@
             freshData.firehose_releases = STATE.data.firehose_releases;
           }
           STATE.data = freshData;
+          loadedFromApi = true;
           renderAll();
         }
       }
-    } catch (e) {
-      // Running in standalone file:// mode using preloaded window.HAYBEAT_INITIAL_DATA
+    } catch (e) {}
+
+    // 2. Fallback for GitHub Pages / static cloud hosting: fetch latest data/trends_data.json with cache-busting
+    if (!loadedFromApi) {
+      try {
+        const cloudResp = await fetch(`data/trends_data.json?t=${Date.now()}`);
+        if (cloudResp.ok) {
+          const cloudData = await cloudResp.json();
+          if (cloudData && cloudData.tracks) {
+            if ((!cloudData.firehose_releases || cloudData.firehose_releases.length === 0) && STATE.data && STATE.data.firehose_releases) {
+              cloudData.firehose_releases = STATE.data.firehose_releases;
+            }
+            STATE.data = cloudData;
+            renderAll();
+          }
+        }
+      } catch (e2) {
+        // Running in standalone file:// mode using preloaded window.HAYBEAT_INITIAL_DATA
+      }
     }
   });
 })();

@@ -45,7 +45,7 @@
         </div>
 
         <!-- Unfiltered Firehose Quick Button -->
-        <button onclick="window.HB.switchTab('firehose')"
+        <button onclick="window.HB.openFirehoseUnfiltered()"
                 class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 shadow transition cursor-pointer"
                 title="Открыть полный нефильтрованный поток всех новых армянских песен от 0 просмотров">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -268,19 +268,19 @@
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mr-1">Масштаб / Просмотры:</span>
           <button class="chip-btn active" data-fh-tier="all" onclick="window.HB.setFirehoseTier('all')">
-            Все новинки (<span id="fh-count-all">320</span>)
+            Все новинки (<span id="fh-count-all">810</span>)
           </button>
           <button class="chip-btn" data-fh-tier="micro" onclick="window.HB.setFirehoseTier('micro')">
-            🌱 Слабые / Микро-релизы 0–1.5K просм. и вне чартов (<span id="fh-count-micro">165</span>)
+            🌱 Слабые / Микро-релизы 0–1.5K просм. и вне чартов (<span id="fh-count-micro">540</span>)
           </button>
           <button class="chip-btn" data-fh-tier="underground" onclick="window.HB.setFirehoseTier('underground')">
-            🔍 Андеграунд / 1.5K–25K (<span id="fh-count-underground">0</span>)
+            🔍 Андеграунд / 1.5K–25K (<span id="fh-count-underground">170</span>)
           </button>
           <button class="chip-btn" data-fh-tier="mid" onclick="window.HB.setFirehoseTier('mid')">
-            📈 Набирающие / 25K–250K (<span id="fh-count-mid">0</span>)
+            📈 Набирающие / 25K–250K (<span id="fh-count-mid">75</span>)
           </button>
           <button class="chip-btn" data-fh-tier="major" onclick="window.HB.setFirehoseTier('major')">
-            🔥 Крупные премьеры 250K+ (<span id="fh-count-major">0</span>)
+            🔥 Крупные премьеры 250K+ (<span id="fh-count-major">25</span>)
           </button>
         </div>
 
@@ -566,8 +566,8 @@
     <audio id="hb-audio-element" preload="none"></audio>
   </div>
 
-  <!-- Preloaded Live Dataset (Works offline & via file:// AND syncs with server.py) -->
-  <script src="data/trends_data.js"></script>
-  <script src="app.js"></script>
+  <!-- Preloaded Live Dataset (Works offline & via file:// AND syncs with server.py / GitHub Pages) -->
+  <script src="data/trends_data.js?v=20261102_2"></script>
+  <script src="app.js?v=20261102_2"></script>
 </body>
 </html>
