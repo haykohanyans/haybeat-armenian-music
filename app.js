@@ -1,6 +1,6 @@
 /**
  * HAYBEAT — Armenian Music Trends Intelligence Hub
- * Frontend Application Controller (app.js)
+ * Professional Frontend Application Controller (app.js)
  */
 
 (function () {
@@ -12,15 +12,16 @@
     sceneFilter: "all",
     signalFilter: "all",
     artistFilter: "all",
+    vibeFilter: "all",
     localOnly: false,
     sortBy: "score",
     viewMode: "grid", // 'grid' | 'table'
     searchQuery: "",
     platformChart: "apple", // 'apple' | 'youtube' | 'itunes'
     fhTier: "all", // 'all' | 'micro' | 'underground' | 'mid' | 'major'
-    fhSource: "all", // 'all' | 'yt_today' | 'yt_week' | 'yt_month' | 'yt_underground' | 'itunes_am_new' | 'deezer_indie' | 'chart_premiere'
-    fhSort: "newest", // 'newest' | 'yt_views_asc' | 'views_asc' | 'views_desc'
-    fhView: "grid", // 'grid' | 'table'
+    fhSource: "all",
+    fhSort: "newest",
+    fhView: "grid",
     fhSearch: "",
     fhHideMixes: true,
     fhHideAi: false,
@@ -30,6 +31,11 @@
     currentTrack: null,
     isPlaying: false,
     queueLabel: "Радар",
+    isShuffle: false,
+    isRepeat: false,
+    isMuted: false,
+    prevVolume: 0.85,
+    timeRemainingMode: false,
   };
 
   const DEFAULT_FAVORITES = [
@@ -151,7 +157,16 @@
       showToast("Трек добавлен в вашу коллекцию!", "⭐");
     }
     saveFavorites();
+    updatePlayerUI();
     renderActiveTab();
+  }
+
+  function toggleCurrentFavorite() {
+    if (!STATE.currentTrack) {
+      showToast("Сначала включите трек для добавления в коллекцию", "⭐");
+      return;
+    }
+    toggleFavorite(STATE.currentTrack.id);
   }
 
   // Toast Notification
@@ -224,7 +239,7 @@
 
     container.innerHTML = `
       <!-- Card 1: #1 Apple Music AM -->
-      <div class="hb-card p-4 flex flex-col justify-between relative overflow-hidden">
+      <div class="hb-card p-4 flex flex-col justify-between relative overflow-hidden group">
         <div class="flex items-center justify-between gap-2 mb-3">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
             🍎 #${topApple?.apple_pos || 1} Apple Music Армения
@@ -232,9 +247,12 @@
           <span class="text-xs text-[var(--text-secondary)]">Релиз: ${escapeHtml(topApple?.release_date || "2026")}</span>
         </div>
         <div class="flex items-center gap-3.5 my-1">
-          <img src="${escapeHtml(topApple?.artwork_url || "")}" alt="" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md flex-shrink-0" />
+          <img src="${escapeHtml(topApple?.artwork_url || "")}" alt="" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md flex-shrink-0 group-hover:scale-105 transition" />
           <div class="min-w-0 flex-1">
-            <h3 class="text-base font-extrabold truncate">${escapeHtml(topApple?.title || "")}</h3>
+            <h3 class="text-base font-extrabold truncate cursor-pointer hover:underline"
+                onclick="window.HB.openTrackDetailModal('${escapeHtml(topApple?.id || "")}')">
+              ${escapeHtml(topApple?.title || "")}
+            </h3>
             <p class="text-xs font-semibold text-amber-400 truncate cursor-pointer hover:underline"
                onclick="window.HB.filterByArtist('${escapeHtml(topApple?.artist_canonical || "")}')">
               ${escapeHtml(topApple?.artist || "")}
@@ -253,11 +271,16 @@
                   class="py-1.5 px-3 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-300 transition cursor-pointer">
             🎬 Клип
           </button>
+          <button onclick="window.HB.openTrackDetailModal('${escapeHtml(topApple?.id || "")}')"
+                  class="p-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] transition cursor-pointer"
+                  title="Телеметрия">
+            ℹ️
+          </button>
         </div>
       </div>
 
       <!-- Card 2: #1 YouTube Armenia -->
-      <div class="hb-card p-4 flex flex-col justify-between relative overflow-hidden">
+      <div class="hb-card p-4 flex flex-col justify-between relative overflow-hidden group">
         <div class="flex items-center justify-between gap-2 mb-3">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
             ▶️ #${topYT?.yt_pos || 1} YouTube Армения
@@ -265,9 +288,12 @@
           <span class="text-xs text-emerald-400 font-bold">+${fmtNum(topYT?.yt_weekly_delta)} за нед.</span>
         </div>
         <div class="flex items-center gap-3.5 my-1">
-          <img src="${escapeHtml(topYT?.artwork_url || "")}" alt="" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md flex-shrink-0" />
+          <img src="${escapeHtml(topYT?.artwork_url || "")}" alt="" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md flex-shrink-0 group-hover:scale-105 transition" />
           <div class="min-w-0 flex-1">
-            <h3 class="text-base font-extrabold truncate">${escapeHtml(topYT?.title || "")}</h3>
+            <h3 class="text-base font-extrabold truncate cursor-pointer hover:underline"
+                onclick="window.HB.openTrackDetailModal('${escapeHtml(topYT?.id || "")}')">
+              ${escapeHtml(topYT?.title || "")}
+            </h3>
             <p class="text-xs font-semibold text-amber-400 truncate cursor-pointer hover:underline"
                onclick="window.HB.filterByArtist('${escapeHtml(topYT?.artist_canonical || "")}')">
               ${escapeHtml(topYT?.artist || "")}
@@ -286,6 +312,11 @@
                   class="py-1.5 px-3 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-300 transition cursor-pointer">
             🎬 Клип
           </button>
+          <button onclick="window.HB.openTrackDetailModal('${escapeHtml(topYT?.id || "")}')"
+                  class="p-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] transition cursor-pointer"
+                  title="Телеметрия">
+            ℹ️
+          </button>
         </div>
       </div>
 
@@ -295,7 +326,7 @@
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30">
             🚀 Главные взлёты недели
           </span>
-          <button onclick="window.HB.switchTab('radar'); window.HB.setSignalFilter('riser');"
+          <button onclick="window.HB.setVibeFilter('risers')"
                   class="text-xs text-violet-300 hover:underline cursor-pointer">Все взлёты →</button>
         </div>
         <div class="space-y-1.5 my-1">
@@ -303,7 +334,7 @@
             .map(
               (r) => `
             <div onclick="window.HB.playTrackById('${escapeHtml(r.id)}')"
-                 class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer text-xs">
+                 class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer text-xs transition">
               <span class="truncate font-medium"><strong class="text-[var(--text-primary)]">${escapeHtml(r.artist)}</strong> — ${escapeHtml(r.title)}</span>
               <span class="text-emerald-400 font-bold flex-shrink-0">▲ ${escapeHtml(r.apple_delta)}</span>
             </div>
@@ -329,7 +360,7 @@
             .map(
               (m) => `
             <div onclick="window.HB.openFirehoseUnfiltered(); window.HB.playFirehoseById('${escapeHtml(m.id)}');"
-                 class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer text-xs">
+                 class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer text-xs transition">
               <span class="truncate font-medium"><strong class="text-[var(--text-primary)]">${escapeHtml(m.artist)}</strong> — ${escapeHtml(m.title)}</span>
               <span class="text-amber-300 font-semibold flex-shrink-0">${
                 m.views > 0
@@ -517,10 +548,10 @@
     return `
       <div class="hb-card hb-card-interactive p-4 flex flex-col justify-between gap-3 ${isPlayingThis ? "track-is-playing" : ""}">
         <div>
-          <!-- Top Bar: Rank, Badges & Score -->
+          <!-- Top Bar: Rank, Badges, Telemetry Info, Score & Favorite -->
           <div class="flex items-center justify-between gap-2 mb-3">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xs font-extrabold text-amber-400">
+              <span class="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xs font-extrabold ${displayRank <= 3 ? "text-amber-400 border-amber-500/40" : "text-[var(--text-secondary)]"}">
                 #${displayRank}
               </span>
               ${(t.badges || []).slice(0, 2).map(getBadgeHtml).join("")}
@@ -529,8 +560,18 @@
               <span class="score-pill ${getScoreClass(t.trend_score)}" title="Индекс тренда HayBeat (0-99)">
                 ⚡ ${t.trend_score}
               </span>
+              <button onclick="window.HB.openTrackDetailModal('${escapeHtml(t.id)}')"
+                      class="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xs text-[var(--text-secondary)] hover:text-white hover:border-amber-500/40 cursor-pointer transition"
+                      title="Аналитика и телеметрия трека">
+                ℹ️
+              </button>
+              <button onclick="window.HB.shareTrack('${escapeHtml(t.id)}')"
+                      class="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-xs text-[var(--text-secondary)] hover:text-white hover:border-amber-500/40 cursor-pointer transition"
+                      title="Поделиться треком">
+                🔗
+              </button>
               <button onclick="window.HB.toggleFavorite('${escapeHtml(t.id)}', event)"
-                      class="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-sm hover:border-amber-500/40 cursor-pointer"
+                      class="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center text-sm hover:border-amber-500/40 cursor-pointer transition"
                       title="${fav ? "Убрать из избранного" : "Добавить в мою коллекцию"}">
                 ${fav ? "⭐" : "☆"}
               </button>
@@ -539,20 +580,22 @@
 
           <!-- Track Main Identity -->
           <div class="flex items-center gap-3.5">
-            <div class="cover-wrap w-20 h-20 ${isPlayingThis ? "active-cover" : ""} cursor-pointer"
+            <div class="cover-wrap w-20 h-20 ${isPlayingThis ? "active-cover" : ""} cursor-pointer group"
                  onclick="window.HB.playTrackById('${escapeHtml(t.id)}')">
-              <img src="${escapeHtml(cover)}" alt="" loading="lazy" class="w-20 h-20 object-cover rounded-xl border border-white/10" />
+              <img src="${escapeHtml(cover)}" alt="" loading="lazy" class="w-20 h-20 object-cover rounded-xl border border-white/10 group-hover:scale-105 transition" />
               <div class="cover-overlay">
                 ${
                   isPlayingThis
-                    ? `<div class="eq-bars"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>`
+                    ? `<div class="eq-bars"><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span></div>`
                     : `<span class="w-10 h-10 rounded-full bg-rose-600/95 text-white flex items-center justify-center font-bold shadow-lg">▶</span>`
                 }
               </div>
             </div>
 
             <div class="min-w-0 flex-1">
-              <h3 class="text-base font-bold leading-snug truncate" title="${escapeHtml(t.title)}">
+              <h3 class="text-base font-bold leading-snug truncate cursor-pointer hover:underline"
+                  title="${escapeHtml(t.title)}"
+                  onclick="window.HB.openTrackDetailModal('${escapeHtml(t.id)}')">
                 ${escapeHtml(t.title)}
               </h3>
               <p class="text-sm font-semibold text-amber-400 hover:underline cursor-pointer truncate mt-0.5"
@@ -586,7 +629,7 @@
           <button onclick="window.HB.playTrackById('${escapeHtml(t.id)}')"
                   class="flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                     isPlayingThis
-                      ? "bg-amber-500 text-slate-950"
+                      ? "bg-amber-500 text-slate-950 shadow-md"
                       : "bg-rose-600/90 hover:bg-rose-500 text-white"
                   }">
             <span>${isPlayingThis ? "⏸ Пауза" : "▶ Слушать превью"}</span>
@@ -642,7 +685,10 @@
                       <div class="flex items-center gap-3">
                         <img src="${escapeHtml(t.artwork_url || t.youtube_thumbnail || "")}" alt="" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                         <div class="min-w-0">
-                          <div class="font-bold truncate max-w-xs">${escapeHtml(t.title)}</div>
+                          <div class="font-bold truncate max-w-xs cursor-pointer hover:underline"
+                               onclick="window.HB.openTrackDetailModal('${escapeHtml(t.id)}')">
+                            ${escapeHtml(t.title)}
+                          </div>
                           <div class="text-xs text-amber-400 cursor-pointer hover:underline"
                                onclick="window.HB.filterByArtist('${escapeHtml(t.artist_canonical)}')">
                             ${escapeHtml(t.artist)}
@@ -651,40 +697,23 @@
                       </div>
                     </td>
                     <td class="py-3 px-4">
-                      <div class="flex flex-col gap-1 items-start">
-                        <span class="text-xs text-[var(--text-secondary)]">${escapeHtml(t.scene)}</span>
-                        ${getBadgeHtml(t.primary_badge)}
-                      </div>
+                      <span class="px-2 py-0.5 rounded text-xs bg-white/5 border border-[var(--border-subtle)]">${escapeHtml(t.scene)}</span>
                     </td>
-                    <td class="py-3 px-4 text-center">
-                      ${
-                        t.apple_pos
-                          ? `<span class="font-bold">#${t.apple_pos}</span> <span class="ml-1">${formatDeltaBadge(t.apple_delta)}</span>`
-                          : `<span class="text-[var(--text-muted)]">—</span>`
-                      }
+                    <td class="py-3 px-4 text-center font-bold">
+                      ${t.apple_pos ? `#${t.apple_pos} ${formatDeltaBadge(t.apple_delta)}` : "—"}
                     </td>
-                    <td class="py-3 px-4 text-right">
-                      ${
-                        t.yt_pos
-                          ? `<div class="font-bold text-amber-400">#${t.yt_pos} • ${fmtNum(t.yt_weekly_streams)}</div>
-                             <div class="text-xs text-[var(--text-secondary)]">${t.yt_weeks} нед. в чарте</div>`
-                          : `<span class="text-[var(--text-muted)]">—</span>`
-                      }
+                    <td class="py-3 px-4 text-right font-medium">
+                      ${t.yt_weekly_streams ? fmtNum(t.yt_weekly_streams) : "—"}
                     </td>
-                    <td class="py-3 px-4 text-right">
-                      ${
-                        t.youtube_views
-                          ? `<div class="font-semibold">${fmtCompact(t.youtube_views)}</div>
-                             <div class="text-xs text-[var(--text-muted)]">${escapeHtml(t.youtube_published || "")}</div>`
-                          : `<span class="text-[var(--text-muted)]">—</span>`
-                      }
+                    <td class="py-3 px-4 text-right text-[var(--text-secondary)]">
+                      ${t.youtube_views ? fmtCompact(t.youtube_views) : "—"}
                     </td>
                     <td class="py-3 px-4 text-center">
                       <span class="score-pill ${getScoreClass(t.trend_score)}">${t.trend_score}</span>
                     </td>
                     <td class="py-3 px-4 text-right whitespace-nowrap">
                       <button onclick="window.HB.playTrackById('${escapeHtml(t.id)}')"
-                              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white mr-1.5 cursor-pointer">
+                              class="px-3 py-1.5 rounded-lg text-xs font-bold ${isPlayingThis ? "bg-amber-500 text-slate-950" : "bg-rose-600 hover:bg-rose-500 text-white"} mr-1.5 cursor-pointer">
                         ${isPlayingThis ? "⏸" : "▶"}
                       </button>
                       ${
@@ -695,8 +724,13 @@
                              </button>`
                           : ""
                       }
+                      <button onclick="window.HB.openTrackDetailModal('${escapeHtml(t.id)}')"
+                              class="px-2 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] mr-1 cursor-pointer"
+                              title="Инфо">
+                        ℹ️
+                      </button>
                       <button onclick="window.HB.toggleFavorite('${escapeHtml(t.id)}', event)"
-                              class="px-2 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 cursor-pointer">
+                              class="px-2 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] cursor-pointer">
                         ${fav ? "⭐" : "☆"}
                       </button>
                     </td>
@@ -709,10 +743,6 @@
       </div>
     `;
   }
-
-  // =========================================================================
-  // RENDERING: TAB 2 — ЧАРТЫ ПЛАТФОРМ (APPLE MUSIC / YOUTUBE / ITUNES AM)
-  // =========================================================================
 
   function findEnrichedMatch(artist, title) {
     if (!STATE.data || !STATE.data.tracks) return null;
@@ -790,7 +820,10 @@
                             : `<div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-xs font-bold">♪</div>`
                         }
                         <div>
-                          <div class="font-bold">${escapeHtml(r.title)}</div>
+                          <div class="font-bold cursor-pointer hover:underline"
+                               onclick="${match ? `window.HB.openTrackDetailModal('${escapeHtml(match.id)}')` : `window.HB.quickWebPlay('${escapeHtml(r.artist + " " + r.title)}')`}">
+                            ${escapeHtml(r.title)}
+                          </div>
                           <div class="text-xs text-[var(--text-secondary)]">${escapeHtml(r.artist)}</div>
                         </div>
                       </div>
@@ -826,13 +859,13 @@
                                match.youtube_video_id
                                  ? `<button onclick="window.HB.openVideoById('${escapeHtml(match.id)}')"
                                             class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-300 cursor-pointer">
-                                      🎬 Клип
-                                    </button>`
+                                       🎬 Клип
+                                     </button>`
                                  : ""
                              }`
                           : `<button onclick="window.HB.quickWebPlay('${escapeHtml(r.artist + " " + r.title)}')"
                                      class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-[var(--text-primary)] cursor-pointer">
-                               🌐 Найти и включить
+                               🌐 Найти
                              </button>`
                       }
                     </td>
@@ -847,7 +880,7 @@
   }
 
   // =========================================================================
-  // RENDERING: TAB 1.5 — ВСЕ НОВИНКИ 0+ (НЕФИЛЬТРОВАННЫЙ ПОТОК ИЗ ВСЕХ ИСТОЧНИКОВ)
+  // RENDERING: TAB 1.5 — ВСЕ НОВИНКИ 0+ (НЕФИЛЬТРОВАННЫЙ ПОТОК)
   // =========================================================================
 
   function getTierPillClass(tierId) {
@@ -939,7 +972,7 @@
 
     return `
       <div class="hb-card hb-card-interactive p-4 flex flex-col justify-between gap-3 relative ${
-        isPlayingThis ? "ring-2 ring-emerald-400" : ""
+        isPlayingThis ? "ring-2 ring-emerald-400 bg-emerald-950/15" : ""
       }">
         <div>
           <!-- Top Source & Views Scale Row -->
@@ -947,9 +980,21 @@
             <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${srcCls}">
               ${escapeHtml(item.source_label)}
             </span>
-            <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${tierCls}">
-              ${escapeHtml(item.tier_label)}
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${tierCls}">
+                ${escapeHtml(item.tier_label)}
+              </span>
+              <button onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')"
+                      class="w-6 h-6 rounded-md bg-white/5 hover:bg-white/15 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
+                      title="Инфо и телеметрия">
+                ℹ️
+              </button>
+              <button onclick="window.HB.shareTrack('${escapeHtml(item.id)}')"
+                      class="w-6 h-6 rounded-md bg-white/5 hover:bg-white/15 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
+                      title="Поделиться">
+                🔗
+              </button>
+            </div>
           </div>
 
           <!-- Cover + Track Metadata -->
@@ -986,7 +1031,9 @@
                     : ""
                 }
               </div>
-              <h3 class="text-sm sm:text-base font-extrabold leading-snug line-clamp-2 mt-0.5" title="${escapeHtml(item.full_title)}">
+              <h3 class="text-sm sm:text-base font-extrabold leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:underline"
+                  title="${escapeHtml(item.full_title)}"
+                  onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')">
                 ${escapeHtml(item.title)}
               </h3>
               <div class="text-[11px] text-[var(--text-muted)] truncate mt-1">
@@ -1015,7 +1062,7 @@
           <button onclick="window.HB.playFirehoseById('${escapeHtml(item.id)}')"
                   class="flex-1 py-2 px-3 rounded-xl text-xs font-bold ${
                     isPlayingThis
-                      ? "bg-amber-500 text-slate-950"
+                      ? "bg-amber-500 text-slate-950 shadow"
                       : "bg-emerald-600 hover:bg-emerald-500 text-white"
                   } transition cursor-pointer">
             ${isPlayingThis ? "⏸ Играет" : item.preview_url ? "▶ Слушать (30с)" : "▶ Слушать"}
@@ -1075,7 +1122,9 @@
                       <div class="flex items-center gap-3">
                         <img src="${escapeHtml(item.artwork_url || "")}" alt="" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                         <div class="min-w-0">
-                          <div class="font-bold truncate max-w-md" title="${escapeHtml(item.full_title)}">
+                          <div class="font-bold truncate max-w-md cursor-pointer hover:underline"
+                               title="${escapeHtml(item.full_title)}"
+                               onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')">
                             ${escapeHtml(item.title)}
                             ${item.is_ai ? `<span class="ml-1 text-[10px] text-purple-300">[🤖 AI]</span>` : ""}
                           </div>
@@ -1108,6 +1157,11 @@
                              </button>`
                           : ""
                       }
+                      <button onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')"
+                              class="px-2 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] mr-1 cursor-pointer"
+                              title="Инфо">
+                        ℹ️
+                      </button>
                       ${
                         extUrl
                           ? `<a href="${escapeHtml(extUrl)}" target="_blank" rel="noopener"
@@ -1185,20 +1239,8 @@
         youtube_views_text: item.views_text,
         youtube_published: item.published_text,
       },
-      currentList.map((x) => ({
-        id: x.id,
-        artist: x.artist,
-        title: x.title,
-        scene: x.source_label,
-        artwork_url: x.artwork_url,
-        preview_url: x.preview_url,
-        youtube_video_id: x.youtube_video_id,
-        youtube_title: x.full_title,
-        youtube_views: x.views,
-        youtube_views_text: x.views_text,
-        youtube_published: x.published_text,
-      })),
-      "Поток Новинок 0+"
+      currentList,
+      "Все Новинки 0+"
     );
   }
 
@@ -1273,7 +1315,10 @@
                   </span>
                   <span class="text-xs text-[var(--text-muted)]">${escapeHtml(t.scene)}</span>
                 </div>
-                <h3 class="text-base font-extrabold truncate">${escapeHtml(t.title)}</h3>
+                <h3 class="text-base font-extrabold truncate cursor-pointer hover:underline"
+                    onclick="window.HB.openTrackDetailModal('${escapeHtml(t.id)}')">
+                  ${escapeHtml(t.title)}
+                </h3>
                 <div class="flex flex-wrap items-center gap-2 mt-2.5 text-xs text-[var(--text-secondary)]">
                   ${t.apple_pos ? `<span class="px-2 py-0.5 rounded bg-white/5">🍎 Apple AM #${t.apple_pos}</span>` : ""}
                   ${t.yt_pos ? `<span class="px-2 py-0.5 rounded bg-white/5">▶️ YT AM #${t.yt_pos}</span>` : ""}
@@ -1285,11 +1330,16 @@
             <div class="px-4 pb-4 flex items-center gap-2">
               <button onclick="window.HB.playTrackById('${escapeHtml(t.id)}')"
                       class="flex-1 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition cursor-pointer">
-                ▶ Аудио-превью
+                ▶ Превью
               </button>
               <button onclick="window.HB.openVideoById('${escapeHtml(t.id)}')"
                       class="flex-1 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition cursor-pointer">
                 🎬 Видеоклип
+              </button>
+              <button onclick="window.HB.openTrackDetailModal('${escapeHtml(t.id)}')"
+                      class="p-2 rounded-xl text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] transition cursor-pointer"
+                      title="Инфо">
+                ℹ️
               </button>
             </div>
           </div>
@@ -1468,7 +1518,7 @@
   }
 
   // =========================================================================
-  // AUDIO PLAYER & JSONP / API FRESH PREVIEW RESOLVER
+  // AUDIO PLAYER & PREVIEW RESOLVER
   // =========================================================================
 
   const audioEl = document.getElementById("hb-audio-element");
@@ -1485,7 +1535,14 @@
         seek.value = String(audioEl.currentTime);
       }
       if (cur) cur.textContent = fmtTime(audioEl.currentTime);
-      if (dur && !isNaN(audioEl.duration)) dur.textContent = fmtTime(audioEl.duration);
+      if (dur && !isNaN(audioEl.duration)) {
+        if (STATE.timeRemainingMode) {
+          const rem = Math.max(0, audioEl.duration - audioEl.currentTime);
+          dur.textContent = "-" + fmtTime(rem);
+        } else {
+          dur.textContent = fmtTime(audioEl.duration);
+        }
+      }
     });
 
     audioEl.addEventListener("play", () => {
@@ -1501,11 +1558,15 @@
     });
 
     audioEl.addEventListener("ended", () => {
+      if (STATE.isRepeat) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
+        return;
+      }
       playNext();
     });
 
     audioEl.addEventListener("error", async () => {
-      // Automatic fallback if a Deezer signed preview URL expired
       if (STATE.currentTrack && !STATE.currentTrack._retriedFreshAudio) {
         STATE.currentTrack._retriedFreshAudio = true;
         const freshUrl = await resolveFreshPreviewUrl(STATE.currentTrack.artist, STATE.currentTrack.title);
@@ -1590,7 +1651,6 @@
   }
 
   async function resolveFreshPreviewUrl(artist, title) {
-    // 1. Try local backend API first
     try {
       const resp = await fetch(`/api/fresh-audio?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`);
       if (resp.ok) {
@@ -1599,7 +1659,6 @@
       }
     } catch (e) {}
 
-    // 2. Fallback to browser-native JSONP (works even on file://!)
     const q = `${artist} ${title}`;
     const itUrl = await fetchItunesJsonp(q);
     if (itUrl) return itUrl;
@@ -1618,7 +1677,6 @@
       STATE.queueIndex = STATE.queue.findIndex((x) => x.id === track.id);
     }
 
-    // If same track clicked, toggle play/pause
     if (STATE.currentTrack && STATE.currentTrack.id === track.id && audioEl.src) {
       togglePlayPause();
       return;
@@ -1628,7 +1686,6 @@
     updatePlayerUI();
 
     let url = track.preview_url;
-    // Check if Deezer token might have expired
     if (!url || (url.includes("dzcdn.net") && url.includes("exp="))) {
       const m = url ? url.match(/exp=(\d+)/) : null;
       const nowSec = Math.floor(Date.now() / 1000);
@@ -1683,17 +1740,41 @@
       STATE.queue = getFilteredRadarTracks();
     }
     if (STATE.queue.length === 0) return;
-    STATE.queueIndex = (STATE.queueIndex + 1) % STATE.queue.length;
+
+    if (STATE.isShuffle && STATE.queue.length > 1) {
+      let randIdx = STATE.queueIndex;
+      while (randIdx === STATE.queueIndex) {
+        randIdx = Math.floor(Math.random() * STATE.queue.length);
+      }
+      STATE.queueIndex = randIdx;
+    } else {
+      STATE.queueIndex = (STATE.queueIndex + 1) % STATE.queue.length;
+    }
+
     const nextTrack = STATE.queue[STATE.queueIndex];
     if (nextTrack) {
-      STATE.currentTrack = null; // Force load
+      STATE.currentTrack = null;
       playTrackObject(nextTrack);
     }
   }
 
   function playPrev() {
     if (!STATE.queue || STATE.queue.length === 0) return;
-    STATE.queueIndex = (STATE.queueIndex - 1 + STATE.queue.length) % STATE.queue.length;
+    if (audioEl && audioEl.currentTime > 3) {
+      audioEl.currentTime = 0;
+      return;
+    }
+
+    if (STATE.isShuffle && STATE.queue.length > 1) {
+      let randIdx = STATE.queueIndex;
+      while (randIdx === STATE.queueIndex) {
+        randIdx = Math.floor(Math.random() * STATE.queue.length);
+      }
+      STATE.queueIndex = randIdx;
+    } else {
+      STATE.queueIndex = (STATE.queueIndex - 1 + STATE.queue.length) % STATE.queue.length;
+    }
+
     const prevTrack = STATE.queue[STATE.queueIndex];
     if (prevTrack) {
       STATE.currentTrack = null;
@@ -1701,12 +1782,55 @@
     }
   }
 
+  function toggleShuffle() {
+    STATE.isShuffle = !STATE.isShuffle;
+    const btn = document.getElementById("player-btn-shuffle");
+    if (btn) {
+      btn.classList.toggle("text-amber-400", STATE.isShuffle);
+      btn.classList.toggle("font-bold", STATE.isShuffle);
+    }
+    showToast(STATE.isShuffle ? "Случайный порядок (Shuffle) включен" : "Обычный порядок очереди", "🔀");
+  }
+
+  function toggleRepeat() {
+    STATE.isRepeat = !STATE.isRepeat;
+    const btn = document.getElementById("player-btn-repeat");
+    if (btn) {
+      btn.classList.toggle("text-amber-400", STATE.isRepeat);
+      btn.classList.toggle("font-bold", STATE.isRepeat);
+    }
+    showToast(STATE.isRepeat ? "Повтор текущего трека включен" : "Повтор трека выключен", "🔁");
+  }
+
+  function toggleMute() {
+    if (!audioEl) return;
+    const muteBtn = document.getElementById("player-mute-btn");
+    const volInput = document.getElementById("player-volume");
+
+    if (!STATE.isMuted) {
+      STATE.prevVolume = audioEl.volume > 0 ? audioEl.volume : 0.85;
+      audioEl.volume = 0;
+      STATE.isMuted = true;
+      if (muteBtn) muteBtn.textContent = "🔇";
+      if (volInput) volInput.value = 0;
+    } else {
+      audioEl.volume = STATE.prevVolume;
+      STATE.isMuted = false;
+      if (muteBtn) muteBtn.textContent = "🔊";
+      if (volInput) volInput.value = STATE.prevVolume;
+    }
+  }
+
+  function toggleTimeDisplay() {
+    STATE.timeRemainingMode = !STATE.timeRemainingMode;
+  }
+
   function startTrendRadio() {
     const playable = getFilteredRadarTracks().filter((t) => t.preview_url);
     if (playable.length === 0) return;
     STATE.currentTrack = null;
     playTrackObject(playable[0], playable, "Радио Трендов");
-    showToast(`Запущено Радио Трендов (${playable.length} треков в очереди)`, "📻");
+    showToast(`Запущено Радио Трендов (${playable.length} треков в эфире)`, "📻");
   }
 
   function playFreshQueue() {
@@ -1737,8 +1861,12 @@
     const artistEl = document.getElementById("player-artist");
     const coverEl = document.getElementById("player-cover");
     const badgeEl = document.getElementById("player-mode-badge");
+    const favBtn = document.getElementById("player-btn-fav");
+    const eqBadge = document.getElementById("player-eq-badge");
 
     if (btnPlay) btnPlay.textContent = STATE.isPlaying ? "⏸" : "▶";
+    if (eqBadge) eqBadge.classList.toggle("hidden", !STATE.isPlaying);
+
     if (t) {
       if (titleEl) titleEl.textContent = t.title;
       if (artistEl) artistEl.textContent = `${t.artist} • ${t.scene || "HAYBEAT"}`;
@@ -1748,7 +1876,268 @@
       if (badgeEl) {
         badgeEl.textContent = STATE.isPlaying ? `В эфире: ${STATE.queueLabel}` : "На паузе";
       }
+      if (favBtn) {
+        const isFav = isFavorite(t.id);
+        favBtn.textContent = isFav ? "⭐" : "☆";
+        favBtn.classList.toggle("text-amber-400", isFav);
+      }
     }
+  }
+
+  // =========================================================================
+  // SHARING & COPY HELPERS
+  // =========================================================================
+
+  function shareStation() {
+    const url = "https://haykohanyans.github.io/haybeat-armenian-music/";
+    const text = `HAYBEAT 🇦🇲 — Радар Трендов Армянской Музыки (Apple Music AM, YouTube AM, все новинки 0+)\n${url}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Ссылка на станцию скопирована в буфер обмена!", "🔗");
+      });
+    } else {
+      showToast(url, "🔗");
+    }
+  }
+
+  function shareTrack(trackId) {
+    if (!STATE.data) return;
+    const t =
+      (STATE.data.tracks || []).find((x) => x.id === trackId) ||
+      (STATE.data.firehose_releases || []).find((x) => x.id === trackId);
+    if (!t) return;
+
+    const ytUrl = t.youtube_url || (t.youtube_video_id ? `https://www.youtube.com/watch?v=${t.youtube_video_id}` : "");
+    const shareText = `🎵 ${t.artist} — ${t.title} 🇦🇲\nСлушать в HAYBEAT: https://haykohanyans.github.io/haybeat-armenian-music/\n${ytUrl}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        showToast(`Ссылка на трек «${t.title}» скопирована!`, "🔗");
+      });
+    } else {
+      showToast(`Трек: ${t.artist} — ${t.title}`, "🎵");
+    }
+  }
+
+  function shareCurrentTrack() {
+    if (!STATE.currentTrack) {
+      shareStation();
+      return;
+    }
+    shareTrack(STATE.currentTrack.id);
+  }
+
+  // =========================================================================
+  // TRACK DEEP INTELLIGENCE MODAL
+  // =========================================================================
+
+  function openTrackDetailModal(trackId) {
+    if (!STATE.data) return;
+    const t =
+      (STATE.data.tracks || []).find((x) => x.id === trackId) ||
+      (STATE.data.firehose_releases || []).find((x) => x.id === trackId);
+    if (!t) return;
+
+    const modal = document.getElementById("track-detail-modal");
+    const content = document.getElementById("track-detail-content");
+    if (!modal || !content) return;
+
+    const cover = t.artwork_url || t.youtube_thumbnail || "https://via.placeholder.com/300x300?text=HAYBEAT";
+    const fav = isFavorite(t.id);
+    const ytUrl = t.youtube_url || (t.youtube_video_id ? `https://www.youtube.com/watch?v=${t.youtube_video_id}` : "");
+    const extUrl = ytUrl || t.apple_music_url || t.deezer_url || "";
+
+    content.innerHTML = `
+      <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+        <div class="relative w-32 h-32 rounded-2xl overflow-hidden border border-white/10 shadow-xl flex-shrink-0 bg-black">
+          <img src="${escapeHtml(cover)}" alt="" class="w-full h-full object-cover" />
+          ${
+            t.youtube_video_id
+              ? `<button onclick="window.HB.openVideoById('${escapeHtml(t.id)}')"
+                        class="absolute inset-0 bg-black/40 hover:bg-black/20 flex items-center justify-center transition text-amber-300 font-bold text-lg">
+                   🎬
+                 </button>`
+              : ""
+          }
+        </div>
+
+        <div class="min-w-0 flex-1 space-y-1.5 text-center sm:text-left">
+          <div class="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+              ${escapeHtml(t.scene || t.source_label || "Армения")}
+            </span>
+            ${
+              t.trend_score !== undefined
+                ? `<span class="score-pill ${getScoreClass(t.trend_score)}">⚡ Score ${t.trend_score}</span>`
+                : ""
+            }
+            ${
+              t.is_ai
+                ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">🤖 AI Cover</span>`
+                : ""
+            }
+          </div>
+
+          <h2 class="text-xl font-extrabold">${escapeHtml(t.title)}</h2>
+          <p class="text-sm font-semibold text-amber-400 hover:underline cursor-pointer"
+             onclick="window.HB.closeTrackDetailModal(); window.HB.filterByArtist('${escapeHtml(t.artist_canonical || t.artist)}');">
+            ${escapeHtml(t.artist)}
+          </p>
+          <p class="text-xs text-[var(--text-secondary)]">
+            ${t.channel ? `Канал: <strong>${escapeHtml(t.channel)}</strong> • ` : ""}
+            ${t.release_date ? `Релиз: <strong>${escapeHtml(t.release_date)}</strong>` : escapeHtml(t.published_text || "")}
+          </p>
+        </div>
+      </div>
+
+      <!-- Telemetry Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center text-xs">
+        <div>
+          <div class="text-[10px] uppercase text-[var(--text-muted)] font-semibold">🍎 Apple Music AM</div>
+          <div class="text-sm font-extrabold mt-1 text-[var(--text-primary)]">
+            ${t.apple_pos ? `#${t.apple_pos} ${t.apple_delta ? `(${t.apple_delta})` : ""}` : "Вне чарта"}
+          </div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase text-[var(--text-muted)] font-semibold">▶️ YouTube AM Top</div>
+          <div class="text-sm font-extrabold mt-1 text-amber-400">
+            ${t.yt_pos ? `#${t.yt_pos}` : "Вне Топ-20"}
+          </div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase text-[var(--text-muted)] font-semibold">👁 Просмотры YouTube</div>
+          <div class="text-sm font-extrabold mt-1 text-emerald-400">
+            ${t.youtube_views ? fmtCompact(t.youtube_views) : t.views !== undefined ? fmtCompact(t.views) : "—"}
+          </div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase text-[var(--text-muted)] font-semibold">💿 Недельный трафик</div>
+          <div class="text-sm font-extrabold mt-1 text-blue-400">
+            ${t.yt_weekly_streams ? fmtNum(t.yt_weekly_streams) : "Одиночный"}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2 pt-2">
+        <button onclick="window.HB.closeTrackDetailModal(); window.HB.playTrackById('${escapeHtml(t.id)}');"
+                class="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 hover:bg-rose-500 text-white transition cursor-pointer">
+          ▶ Слушать превью (30с)
+        </button>
+        ${
+          t.youtube_video_id
+            ? `<button onclick="window.HB.closeTrackDetailModal(); window.HB.openVideoById('${escapeHtml(t.id)}');"
+                       class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition cursor-pointer">
+                 🎬 Смотреть клип
+               </button>`
+            : ""
+        }
+        <button onclick="window.HB.toggleFavorite('${escapeHtml(t.id)}'); window.HB.openTrackDetailModal('${escapeHtml(t.id)}');"
+                class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] border border-[var(--border-subtle)] transition cursor-pointer">
+          ${fav ? "⭐ В коллекции" : "☆ В коллекцию"}
+        </button>
+        <button onclick="window.HB.shareTrack('${escapeHtml(t.id)}')"
+                class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] border border-[var(--border-subtle)] transition cursor-pointer"
+                title="Скопировать ссылку">
+          🔗
+        </button>
+        ${
+          extUrl
+            ? `<a href="${escapeHtml(extUrl)}" target="_blank" rel="noopener"
+                  class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-[var(--text-secondary)] border border-[var(--border-subtle)] transition"
+                  title="Открыть оригинал">
+                ↗
+              </a>`
+            : ""
+        }
+      </div>
+    `;
+
+    modal.classList.remove("hidden");
+  }
+
+  function openPlayingTrackDetail() {
+    if (!STATE.currentTrack) return;
+    openTrackDetailModal(STATE.currentTrack.id);
+  }
+
+  function closeTrackDetailModal() {
+    const modal = document.getElementById("track-detail-modal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  function openShortcutsModal() {
+    const modal = document.getElementById("shortcuts-modal");
+    if (modal) modal.classList.remove("hidden");
+  }
+
+  function closeShortcutsModal() {
+    const modal = document.getElementById("shortcuts-modal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  function closeAllModals() {
+    closeVideoModal();
+    window.HB.closeLiveSearchModal();
+    closeTrackDetailModal();
+    closeShortcutsModal();
+  }
+
+  // =========================================================================
+  // SMART VIBES & CURATIONS ENGINE
+  // =========================================================================
+
+  function setVibeFilter(vibeKey) {
+    STATE.vibeFilter = vibeKey;
+    document.querySelectorAll(".vibe-pill").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-vibe") === vibeKey);
+    });
+
+    if (vibeKey === "all") {
+      STATE.sceneFilter = "all";
+      STATE.signalFilter = "all";
+      STATE.localOnly = false;
+      switchTab("radar");
+    } else if (vibeKey === "risers") {
+      STATE.sceneFilter = "all";
+      STATE.signalFilter = "riser";
+      STATE.localOnly = false;
+      switchTab("radar");
+    } else if (vibeKey === "fresh") {
+      switchTab("fresh");
+    } else if (vibeKey === "kef") {
+      STATE.sceneFilter = "kef";
+      STATE.signalFilter = "all";
+      STATE.localOnly = false;
+      switchTab("radar");
+    } else if (vibeKey === "urban") {
+      STATE.sceneFilter = "hiphop";
+      STATE.signalFilter = "all";
+      STATE.localOnly = false;
+      switchTab("radar");
+    } else if (vibeKey === "indie") {
+      STATE.sceneFilter = "indie";
+      STATE.signalFilter = "all";
+      STATE.localOnly = false;
+      switchTab("radar");
+    } else if (vibeKey === "local") {
+      STATE.sceneFilter = "all";
+      STATE.signalFilter = "all";
+      STATE.localOnly = true;
+      switchTab("radar");
+    }
+
+    // Sync button active states in sub-filters
+    document.querySelectorAll("[data-scene]").forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-scene") === STATE.sceneFilter);
+    });
+    document.querySelectorAll("[data-signal]").forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-signal") === STATE.signalFilter);
+    });
+    const chkLocal = document.getElementById("chk-local-only");
+    if (chkLocal) chkLocal.checked = STATE.localOnly;
+
+    renderAll();
   }
 
   // =========================================================================
@@ -1785,6 +2174,10 @@
           ${track.youtube_views ? `<span>👁 Всего просмотров: <strong>${fmtNum(track.youtube_views)}</strong></span>` : ""}
         </div>
         <div class="flex items-center gap-2">
+          <button onclick="window.HB.shareTrack('${escapeHtml(track.id)}')"
+                  class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold">
+            🔗 Поделиться
+          </button>
           <a href="https://www.youtube.com/watch?v=${encodeURIComponent(track.youtube_video_id)}" target="_blank" rel="noopener"
              class="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold hover:bg-rose-500">
             Открыть на YouTube ↗
@@ -1951,7 +2344,7 @@
       showToast("Актуальный срез данных уже загружен", "✅");
     } finally {
       if (icon) icon.classList.remove("animate-spin-fast");
-      if (text) text.textContent = "Обновить чарты";
+      if (text) text.textContent = "Обновить";
     }
   }
 
@@ -1990,9 +2383,55 @@
     renderActiveTab();
   }
 
+  // =========================================================================
+  // KEYBOARD SHORTCUTS MANAGER
+  // =========================================================================
+
+  function setupKeyboardShortcuts() {
+    window.addEventListener("keydown", (e) => {
+      const tag = (e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") {
+        if (e.key === "Escape") {
+          e.target.blur();
+          closeAllModals();
+        }
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        playNext();
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        playPrev();
+      } else if (e.code === "KeyM") {
+        toggleMute();
+      } else if (e.code === "KeyS") {
+        toggleShuffle();
+      } else if (e.code === "KeyF") {
+        toggleCurrentFavorite();
+      } else if (e.key === "/" || e.code === "Slash") {
+        e.preventDefault();
+        const inp = document.getElementById("search-input");
+        if (inp) {
+          inp.focus();
+          inp.select();
+        }
+      } else if (e.key === "Escape") {
+        closeAllModals();
+      } else if (e.key === "?") {
+        openShortcutsModal();
+      }
+    });
+  }
+
   // Expose Public API on window.HB
   window.HB = {
     switchTab,
+    setVibeFilter,
     openFirehoseUnfiltered() {
       window.HB.resetFirehoseFilters();
       switchTab("firehose");
@@ -2136,6 +2575,7 @@
       STATE.sceneFilter = "all";
       STATE.signalFilter = "all";
       STATE.artistFilter = "all";
+      STATE.vibeFilter = "all";
       STATE.localOnly = false;
       STATE.searchQuery = "";
       const input = document.getElementById("search-input");
@@ -2144,6 +2584,7 @@
       if (chk) chk.checked = false;
       document.querySelectorAll("[data-scene]").forEach((b) => b.classList.toggle("active", b.getAttribute("data-scene") === "all"));
       document.querySelectorAll("[data-signal]").forEach((b) => b.classList.toggle("active", b.getAttribute("data-signal") === "all"));
+      document.querySelectorAll(".vibe-pill").forEach((b) => b.classList.toggle("active", b.getAttribute("data-vibe") === "all"));
       window.HB.resetFirehoseFilters();
       renderAll();
     },
@@ -2159,6 +2600,11 @@
     togglePlayPause,
     playNext,
     playPrev,
+    toggleShuffle,
+    toggleRepeat,
+    toggleMute,
+    toggleTimeDisplay,
+    toggleCurrentFavorite,
     startTrendRadio,
     playFreshQueue,
     playFavoritesQueue,
@@ -2166,7 +2612,12 @@
       if (audioEl) audioEl.currentTime = Number(val);
     },
     setVolume(val) {
-      if (audioEl) audioEl.volume = Number(val);
+      if (audioEl) {
+        audioEl.volume = Number(val);
+        STATE.isMuted = (Number(val) === 0);
+        const muteBtn = document.getElementById("player-mute-btn");
+        if (muteBtn) muteBtn.textContent = STATE.isMuted ? "🔇" : "🔊";
+      }
     },
     openVideoById,
     openCurrentTrackVideo() {
@@ -2177,6 +2628,15 @@
       }
     },
     closeVideoModal,
+    openTrackDetailModal,
+    openPlayingTrackDetail,
+    closeTrackDetailModal,
+    openShortcutsModal,
+    closeShortcutsModal,
+    closeAllModals,
+    shareStation,
+    shareTrack,
+    shareCurrentTrack,
     toggleFavorite,
     exportFavoritesText() {
       const favTracks = STATE.favorites
@@ -2230,6 +2690,7 @@
   document.addEventListener("DOMContentLoaded", async () => {
     loadFavorites();
     setupAudioEvents();
+    setupKeyboardShortcuts();
     renderAll();
 
     // 1. Try syncing with local API server if running

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20261103_1" />
 </head>
 <body>
   <!-- Armenian Flag Top Ribbon -->
@@ -19,25 +19,30 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
       <!-- Brand Identity -->
       <div class="flex items-center gap-3.5">
-        <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-extrabold text-white text-lg shadow-lg"
+        <div class="relative w-11 h-11 rounded-2xl flex items-center justify-center font-extrabold text-white text-lg shadow-lg flex-shrink-0"
              style="background: linear-gradient(135deg, #d90012 0%, #0033a0 52%, #f2a800 100%);">
-          HB
+          <span>HB</span>
+          <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[var(--bg-main)] animate-pulse"></span>
         </div>
         <div>
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">HAYBEAT</h1>
             <span class="px-2 py-0.5 text-xs font-bold rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30">
               ARMENIA MUSIC RADAR
             </span>
+            <div class="hidden lg:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-bold text-emerald-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>LIVE • ЕРЕВАН</span>
+            </div>
           </div>
           <p class="text-xs text-[var(--text-secondary)]">
-            Живой мониторинг трендов армянской музыки: Apple Music AM • YouTube AM • iTunes • Новинки 2026
+            Стриминг-радар армянской музыки: Apple Music AM • YouTube AM • iTunes • Все новинки 0+
           </p>
         </div>
       </div>
 
       <!-- Header Right Actions -->
-      <div class="flex flex-wrap items-center gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
         <!-- Data Snapshot Badge -->
         <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -49,7 +54,7 @@
                 class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 shadow transition cursor-pointer"
                 title="Открыть полный нефильтрованный поток всех новых армянских песен от 0 просмотров">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span>📡 Все Новинки 0+ (Без фильтра)</span>
+          <span>📡 Все Новинки 0+</span>
         </button>
 
         <!-- Trend Radio Button -->
@@ -60,12 +65,27 @@
           <span>Радио Трендов</span>
         </button>
 
+        <!-- Share Station Button -->
+        <button onclick="window.HB.shareStation()"
+                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition cursor-pointer"
+                title="Поделиться ссылкой на станцию">
+          <span>🔗</span>
+          <span class="hidden md:inline">Поделиться</span>
+        </button>
+
+        <!-- Keyboard Shortcuts Button -->
+        <button onclick="window.HB.openShortcutsModal()"
+                class="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-amber-500/40 transition cursor-pointer"
+                title="Горячие клавиши (Space, M, /, Стрелки)">
+          <span>⌨️</span>
+        </button>
+
         <!-- Live Refresh Button -->
         <button id="btn-refresh-data" onclick="window.HB.refreshLiveData()"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] transition cursor-pointer"
                 title="Собрать свежие данные из чартов Apple Music AM, YouTube AM и iTunes">
           <span id="refresh-icon">🔄</span>
-          <span id="refresh-text">Обновить чарты</span>
+          <span id="refresh-text" class="hidden sm:inline">Обновить</span>
         </button>
 
         <!-- Theme Toggle -->
@@ -79,11 +99,11 @@
   </header>
 
   <!-- Main Content Container -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-6">
 
     <!-- Status Toast Notification -->
-    <div id="toast-box" class="hidden fixed top-20 right-6 z-50 max-w-md px-4 py-3 rounded-xl bg-emerald-950/95 border border-emerald-500/50 text-emerald-200 text-sm shadow-2xl flex items-center gap-3">
-      <span id="toast-icon">✅</span>
+    <div id="toast-box" class="hidden fixed top-20 right-6 z-50 max-w-md px-4 py-3 rounded-2xl bg-emerald-950/95 border border-emerald-500/50 text-emerald-200 text-sm shadow-2xl flex items-center gap-3 backdrop-blur-md">
+      <span id="toast-icon" class="text-lg">✅</span>
       <span id="toast-msg">Данные успешно обновлены!</span>
     </div>
 
@@ -91,6 +111,21 @@
     <section id="hero-spotlights" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Populated dynamically by app.js -->
     </section>
+
+    <!-- SMART CURATED VIBE PILLS BAR -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-none" id="smart-vibe-bar">
+      <span class="text-xs font-bold text-amber-400 flex items-center gap-1 flex-shrink-0 mr-1">
+        <span>✨</span> Вайб:
+      </span>
+      <button class="vibe-pill active" data-vibe="all" onclick="window.HB.setVibeFilter('all')">🔥 Все тренды</button>
+      <button class="vibe-pill" data-vibe="risers" onclick="window.HB.setVibeFilter('risers')">🚀 Взлёты недели (+20)</button>
+      <button class="vibe-pill" data-vibe="fresh" onclick="window.HB.setVibeFilter('fresh')">✨ Премьеры 2026</button>
+      <button class="vibe-pill" data-vibe="kef" onclick="window.HB.setVibeFilter('kef')">🥁 Танцевальный Kef & Свадебные</button>
+      <button class="vibe-pill" data-vibe="urban" onclick="window.HB.setVibeFilter('urban')">🎧 Ереванский R&B / Рэп</button>
+      <button class="vibe-pill" data-vibe="indie" onclick="window.HB.setVibeFilter('indie')">🎸 Инди & Этно-Фолк</button>
+      <button class="vibe-pill" data-vibe="local" onclick="window.HB.setVibeFilter('local')">🇦🇲 100% Локал Армения</button>
+      <button class="vibe-pill" data-vibe="favs" onclick="window.HB.switchTab('favorites')">⭐ Мой Плейлист</button>
+    </div>
 
     <!-- SEARCH & QUICK ARTIST RADAR BAR -->
     <section class="hb-card p-4 space-y-3">
@@ -100,12 +135,15 @@
           <input id="search-input" type="text"
                  oninput="window.HB.onSearchInput(this.value)"
                  onkeydown="if(event.key==='Enter') window.HB.triggerLiveWebSearch()"
-                 placeholder="Быстрый фильтр по трекам и артистам (например: Sirusho, Brunette, Думикян, Misho, Ladaniva)..."
-                 class="w-full pl-10 pr-20 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus:border-amber-500/60 focus:outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]" />
-          <button id="btn-clear-search" onclick="window.HB.clearSearch()"
-                  class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[var(--text-secondary)]">
-            Сброс ✕
-          </button>
+                 placeholder="Поиск по артистам и трекам (нажмите / для фокуса: Sirusho, Brunette, Думикян, Misho, Ladaniva)..."
+                 class="w-full pl-10 pr-24 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus:border-amber-500/60 focus:outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]" />
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            <kbd class="key-hint hidden sm:inline-block">/</kbd>
+            <button id="btn-clear-search" onclick="window.HB.clearSearch()"
+                    class="hidden text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[var(--text-secondary)]">
+              ✕
+            </button>
+          </div>
         </div>
         <button onclick="window.HB.triggerLiveWebSearch()"
                 class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 transition cursor-pointer whitespace-nowrap">
@@ -126,12 +164,12 @@
         <button class="nav-tab active" data-tab="radar" onclick="window.HB.switchTab('radar')">
           <span>🔥</span>
           <span>Главный Радар</span>
-          <span id="badge-count-radar" class="px-1.5 py-0.5 text-xs rounded-full bg-black/25">85</span>
+          <span id="badge-count-radar" class="px-1.5 py-0.5 text-xs rounded-full bg-black/25">86</span>
         </button>
         <button class="nav-tab" data-tab="firehose" onclick="window.HB.switchTab('firehose')">
           <span>📡</span>
           <span>Все Новинки 0+ (Весь Поток)</span>
-          <span id="badge-count-firehose" class="px-1.5 py-0.5 text-xs font-extrabold rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-500/40">320</span>
+          <span id="badge-count-firehose" class="px-1.5 py-0.5 text-xs font-extrabold rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-500/40">618</span>
         </button>
         <button class="nav-tab" data-tab="charts" onclick="window.HB.switchTab('charts')">
           <span>📊</span>
@@ -140,12 +178,12 @@
         <button class="nav-tab" data-tab="fresh" onclick="window.HB.switchTab('fresh')">
           <span>✨</span>
           <span>Топ-Премьеры Чартов</span>
-          <span id="badge-count-fresh" class="px-1.5 py-0.5 text-xs rounded-full bg-violet-500/20 text-violet-300">2026</span>
+          <span id="badge-count-fresh" class="px-1.5 py-0.5 text-xs rounded-full bg-violet-500/20 text-violet-300">40</span>
         </button>
         <button class="nav-tab" data-tab="artists" onclick="window.HB.switchTab('artists')">
           <span>👑</span>
           <span>Артисты и Аналитика</span>
-          <span id="badge-count-artists" class="px-1.5 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-300">34</span>
+          <span id="badge-count-artists" class="px-1.5 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-300">31</span>
         </button>
         <button class="nav-tab" data-tab="favorites" onclick="window.HB.switchTab('favorites')">
           <span>⭐</span>
@@ -156,7 +194,7 @@
 
       <!-- Active Filter Counter -->
       <div class="text-xs text-[var(--text-secondary)]">
-        Показано треков: <strong id="visible-tracks-count" class="text-amber-400">85</strong>
+        Показано треков: <strong id="visible-tracks-count" class="text-amber-400">86</strong>
       </div>
     </nav>
 
@@ -196,12 +234,12 @@
 
           <div class="flex items-center gap-2.5">
             <select id="sort-select" onchange="window.HB.setSortBy(this.value)"
-                    class="px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-primary)] focus:outline-none">
-              <option value="score">По индексу тренда (HayBeat Score)</option>
-              <option value="apple">По позиции в Apple Music AM</option>
-              <option value="yt_weekly">По просмотрам за неделю (YouTube AM)</option>
-              <option value="yt_total">По общим просмотрам на YouTube</option>
-              <option value="fresh">По новизне релиза</option>
+                    class="px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-primary)] focus:outline-none cursor-pointer">
+              <option value="score">⚡ По индексу тренда (HayBeat Score)</option>
+              <option value="apple">🍎 По позиции в Apple Music AM</option>
+              <option value="yt_weekly">▶️ По просмотрам за неделю (YouTube AM)</option>
+              <option value="yt_total">👁 По общим просмотрам на YouTube</option>
+              <option value="fresh">✨ По новизне релиза</option>
             </select>
 
             <div class="inline-flex rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-0.5">
@@ -223,7 +261,7 @@
     </section>
 
     <!-- ====================================================================
-         TAB 1.5 (NEW!): ВСЕ НОВИНКИ 0+ (НЕФИЛЬТРОВАННЫЙ ПОТОК ИЗ ВСЕХ ИСТОЧНИКОВ)
+         TAB 1.5: ВСЕ НОВИНКИ 0+ (НЕФИЛЬТРОВАННЫЙ ПОТОК ИЗ ВСЕХ ИСТОЧНИКОВ)
          ==================================================================== -->
     <section id="tab-panel-firehose" class="hidden space-y-5">
       <!-- Top Banner & Quick Actions -->
@@ -235,7 +273,7 @@
                 📡 ПОТОК БЕЗ ЦЕНЗУРЫ И РЕЙТИНГОВ (0+ ПРОСМОТРОВ)
               </span>
               <span id="firehose-stats-pill" class="text-xs text-[var(--text-secondary)]">
-                Загружено 320 релизов из YouTube (за 24ч / неделю / месяц), Apple Music AM и Deezer
+                В базе потока: 618 релизов (из них 357 — малые/слабые релизы 0–1.5K просм. и синглы вне чартов)
               </span>
             </div>
             <h2 class="text-lg sm:text-xl font-extrabold">
@@ -268,19 +306,19 @@
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mr-1">Масштаб / Просмотры:</span>
           <button class="chip-btn active" data-fh-tier="all" onclick="window.HB.setFirehoseTier('all')">
-            Все новинки (<span id="fh-count-all">810</span>)
+            Все новинки (<span id="fh-count-all">471</span>)
           </button>
           <button class="chip-btn" data-fh-tier="micro" onclick="window.HB.setFirehoseTier('micro')">
-            🌱 Слабые / Микро-релизы 0–1.5K просм. и вне чартов (<span id="fh-count-micro">540</span>)
+            🌱 Слабые / Микро-релизы 0–1.5K просм. и вне чартов (<span id="fh-count-micro">277</span>)
           </button>
           <button class="chip-btn" data-fh-tier="underground" onclick="window.HB.setFirehoseTier('underground')">
-            🔍 Андеграунд / 1.5K–25K (<span id="fh-count-underground">170</span>)
+            🔍 Андеграунд / 1.5K–25K (<span id="fh-count-underground">111</span>)
           </button>
           <button class="chip-btn" data-fh-tier="mid" onclick="window.HB.setFirehoseTier('mid')">
-            📈 Набирающие / 25K–250K (<span id="fh-count-mid">75</span>)
+            📈 Набирающие / 25K–250K (<span id="fh-count-mid">26</span>)
           </button>
           <button class="chip-btn" data-fh-tier="major" onclick="window.HB.setFirehoseTier('major')">
-            🔥 Крупные премьеры 250K+ (<span id="fh-count-major">25</span>)
+            🔥 Крупные премьеры 250K+ (<span id="fh-count-major">57</span>)
           </button>
         </div>
 
@@ -320,7 +358,7 @@
 
           <div class="flex flex-wrap items-center gap-2.5">
             <select id="fh-sort-select" onchange="window.HB.setFirehoseSort(this.value)"
-                    class="px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-primary)] focus:outline-none">
+                    class="px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-primary)] focus:outline-none cursor-pointer">
               <option value="newest">🕒 Сначала самые свежие (минуты/часы назад)</option>
               <option value="yt_views_asc">🌱 Сначала самые слабые в YouTube (от 0 просмотров ↑)</option>
               <option value="views_asc">🌱 Сначала вне чартов и минимум просмотров (0+ ↑)</option>
@@ -382,14 +420,14 @@
             <span>Топ-Премьеры Чартов 2026</span>
           </h2>
           <p class="text-xs text-[var(--text-secondary)] mt-1">
-            Самые громкие новинки последних недель, уже вошедшие в чарты Армении. А чтобы увидеть <strong>абсолютно все релизы от 0 просмотров</strong>, откройте вкладку <a href="javascript:void(0)" onclick="window.HB.switchTab('firehose')" class="text-emerald-400 underline font-semibold">📡 Все Новинки 0+ (Весь Поток)</a>.
+            Самые громкие новинки последних недель, уже вошедшие в чарты Армении. А чтобы увидеть <strong>абсолютно все релизы от 0 просмотров</strong>, откройте вкладку <a href="javascript:void(0)" onclick="window.HB.openFirehoseUnfiltered()" class="text-emerald-400 underline font-semibold">📡 Все Новинки 0+ (Весь Поток)</a>.
           </p>
         </div>
         <div class="flex items-center gap-2 self-start sm:self-auto">
-          <button onclick="window.HB.switchTab('firehose')"
+          <button onclick="window.HB.openFirehoseUnfiltered()"
                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/35 hover:bg-emerald-500/25 transition cursor-pointer">
             <span>📡</span>
-            <span>Открыть все новинки 0+ (320)</span>
+            <span>Открыть все новинки 0+ (618)</span>
           </button>
           <button onclick="window.HB.playFreshQueue()"
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-500 transition cursor-pointer">
@@ -459,15 +497,15 @@
   <!-- ======================================================================
        YOUTUBE VIDEO THEATER MODAL
        ====================================================================== -->
-  <div id="video-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="hb-card w-full max-w-4xl overflow-hidden border border-amber-500/30 shadow-2xl">
+  <div id="video-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="hb-card w-full max-w-4xl overflow-hidden border border-amber-500/40 shadow-2xl modal-fade-in">
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
         <div class="min-w-0 pr-4">
           <h3 id="modal-video-title" class="text-base font-bold truncate">Официальный видеоклип</h3>
           <p id="modal-video-subtitle" class="text-xs text-[var(--text-secondary)] truncate"></p>
         </div>
         <button onclick="window.HB.closeVideoModal()"
-                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center font-bold cursor-pointer">
+                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center font-bold cursor-pointer transition">
           ✕
         </button>
       </div>
@@ -476,7 +514,80 @@
                 frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowfullscreen></iframe>
       </div>
-      <div id="modal-video-footer" class="px-5 py-3 bg-[var(--bg-elevated)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
+      <div id="modal-video-footer" class="px-5 py-3.5 bg-[var(--bg-elevated)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       TRACK DEEP INTELLIGENCE MODAL (ANALYTICS & SHARING)
+       ====================================================================== -->
+  <div id="track-detail-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="hb-card w-full max-w-2xl overflow-hidden border border-amber-500/35 shadow-2xl modal-fade-in">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📊</span>
+          <h3 class="text-sm sm:text-base font-bold">Карточка & Телеметрия Трека</h3>
+        </div>
+        <button onclick="window.HB.closeTrackDetailModal()"
+                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center font-bold cursor-pointer transition">
+          ✕
+        </button>
+      </div>
+      <div id="track-detail-content" class="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       KEYBOARD SHORTCUTS CHEAT SHEET MODAL
+       ====================================================================== -->
+  <div id="shortcuts-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="hb-card w-full max-w-md overflow-hidden border border-amber-500/40 shadow-2xl modal-fade-in">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⌨️</span>
+          <h3 class="text-base font-bold">Горячие клавиши плеера</h3>
+        </div>
+        <button onclick="window.HB.closeShortcutsModal()"
+                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center font-bold cursor-pointer transition">
+          ✕
+        </button>
+      </div>
+      <div class="p-5 space-y-3 text-xs">
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">Воспроизвести / Пауза</span>
+          <kbd class="key-hint">Пробел</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">Следующий трек</span>
+          <kbd class="key-hint">стрелка вправо →</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">Предыдущий трек</span>
+          <kbd class="key-hint">стрелка влево ←</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">Без звука (Mute / Unmute)</span>
+          <kbd class="key-hint">M</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">Перемешать очередь (Shuffle)</span>
+          <kbd class="key-hint">S</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">В избранное (Like)</span>
+          <kbd class="key-hint">F</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)]">
+          <span class="text-[var(--text-secondary)]">Быстрый фокус на поиск</span>
+          <kbd class="key-hint">/</kbd>
+        </div>
+        <div class="flex items-center justify-between py-1.5">
+          <span class="text-[var(--text-secondary)]">Закрыть любое окно</span>
+          <kbd class="key-hint">Esc</kbd>
+        </div>
       </div>
     </div>
   </div>
@@ -484,8 +595,8 @@
   <!-- ======================================================================
        LIVE WEB SEARCH MODAL (YOUTUBE + APPLE MUSIC + DEEZER)
        ====================================================================== -->
-  <div id="live-search-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="hb-card w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden border border-blue-500/30 shadow-2xl">
+  <div id="live-search-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="hb-card w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden border border-blue-500/35 shadow-2xl modal-fade-in">
       <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
         <div>
           <h3 class="text-base font-bold flex items-center gap-2">
@@ -497,7 +608,7 @@
           </p>
         </div>
         <button onclick="window.HB.closeLiveSearchModal()"
-                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center font-bold cursor-pointer">
+                class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center font-bold cursor-pointer transition">
           ✕
         </button>
       </div>
@@ -511,53 +622,116 @@
   <div class="player-bar px-4 sm:px-6 py-2.5">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
       <!-- Currently Playing Track Info -->
-      <div class="flex items-center gap-3 w-full sm:w-72 min-w-0">
-        <img id="player-cover" src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/aa/e9/d3/aae9d3fe-727f-0cdf-85f1-e281ab6eb493/859749357506_cover.jpg/600x600bb.jpg"
-             alt="Cover" class="w-12 h-12 rounded-xl object-cover border border-white/10 flex-shrink-0" />
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <p id="player-title" class="text-sm font-bold truncate">Выберите трек или включите Радио Трендов</p>
+      <div class="flex items-center gap-3 w-full sm:w-80 min-w-0">
+        <div class="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black group cursor-pointer"
+             onclick="window.HB.openPlayingTrackDetail()">
+          <img id="player-cover" src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/aa/e9/d3/aae9d3fe-727f-0cdf-85f1-e281ab6eb493/859749357506_cover.jpg/600x600bb.jpg"
+               alt="Cover" class="w-full h-full object-cover" />
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs transition">
+            ℹ️
           </div>
-          <p id="player-artist" class="text-xs text-[var(--text-secondary)] truncate">HAYBEAT • 30-сек превью Apple Music / Deezer</p>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5">
+            <p id="player-title" class="text-sm font-bold truncate cursor-pointer hover:underline"
+               onclick="window.HB.openPlayingTrackDetail()">
+              Выберите трек или включите Радио Трендов
+            </p>
+            <div id="player-eq-badge" class="hidden player-eq-badge">
+              <span class="eq-bars">
+                <span class="eq-bar"></span>
+                <span class="eq-bar"></span>
+                <span class="eq-bar"></span>
+                <span class="eq-bar"></span>
+              </span>
+            </div>
+          </div>
+          <p id="player-artist" class="text-xs text-[var(--text-secondary)] truncate">
+            HAYBEAT • 30-сек превью Apple Music / Deezer
+          </p>
+        </div>
+
+        <!-- Quick Favorite & Share inside Player -->
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button id="player-btn-fav" onclick="window.HB.toggleCurrentFavorite()"
+                  class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
+                  title="Добавить в мой плейлист">
+            ☆
+          </button>
+          <button id="player-btn-share" onclick="window.HB.shareCurrentTrack()"
+                  class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
+                  title="Поделиться треком">
+            🔗
+          </button>
+          <button id="player-btn-info" onclick="window.HB.openPlayingTrackDetail()"
+                  class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
+                  title="Телеметрия и чарты трека">
+            ℹ️
+          </button>
         </div>
       </div>
 
       <!-- Player Transport & Progress -->
       <div class="flex flex-col items-center gap-1.5 flex-1 max-w-xl w-full">
-        <div class="flex items-center gap-4">
-          <button onclick="window.HB.playPrev()" class="text-sm text-[var(--text-secondary)] hover:text-white transition cursor-pointer" title="Предыдущий трек">
+        <div class="flex items-center gap-3.5">
+          <!-- Shuffle -->
+          <button id="player-btn-shuffle" onclick="window.HB.toggleShuffle()"
+                  class="text-xs text-[var(--text-muted)] hover:text-white transition cursor-pointer p-1"
+                  title="Случайный порядок (S)">
+            🔀
+          </button>
+          <!-- Prev -->
+          <button onclick="window.HB.playPrev()"
+                  class="text-sm text-[var(--text-secondary)] hover:text-white transition cursor-pointer p-1"
+                  title="Предыдущий трек (стрелка влево)">
             ⏮
           </button>
+          <!-- Play / Pause -->
           <button id="player-btn-play" onclick="window.HB.togglePlayPause()"
                   class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition hover:scale-105 cursor-pointer"
-                  style="background: linear-gradient(135deg, #f59e0b 0%, #e11d48 100%);"
-                  title="Воспроизвести / Пауза">
+                  style="background: linear-gradient(135deg, #f59e0b 0%, #e11d48 100%); box-shadow: 0 4px 18px rgba(225, 29, 72, 0.45);"
+                  title="Воспроизвести / Пауза (Пробел)">
             ▶
           </button>
-          <button onclick="window.HB.playNext()" class="text-sm text-[var(--text-secondary)] hover:text-white transition cursor-pointer" title="Следующий трек">
+          <!-- Next -->
+          <button onclick="window.HB.playNext()"
+                  class="text-sm text-[var(--text-secondary)] hover:text-white transition cursor-pointer p-1"
+                  title="Следующий трек (стрелка вправо)">
             ⏭
           </button>
+          <!-- Repeat -->
+          <button id="player-btn-repeat" onclick="window.HB.toggleRepeat()"
+                  class="text-xs text-[var(--text-muted)] hover:text-white transition cursor-pointer p-1"
+                  title="Повтор трека">
+            🔁
+          </button>
+          <!-- Clip button -->
           <button id="player-btn-video" onclick="window.HB.openCurrentTrackVideo()"
                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 text-amber-300 transition cursor-pointer"
-                  title="Смотреть официальный клип на этот трек">
+                  title="Смотреть официальный видеоклип">
             🎬 Клип
           </button>
         </div>
         <div class="flex items-center gap-2.5 w-full">
-          <span id="player-time-cur" class="text-[11px] font-mono text-[var(--text-secondary)] w-8 text-right">0:00</span>
+          <span id="player-time-cur" class="text-[11px] font-mono text-[var(--text-secondary)] w-8 text-right select-none">0:00</span>
           <input id="player-seek" type="range" min="0" max="30" step="0.1" value="0"
                  oninput="window.HB.seekAudio(this.value)" class="hb-slider flex-1" />
-          <span id="player-time-dur" class="text-[11px] font-mono text-[var(--text-secondary)] w-8">0:30</span>
+          <span id="player-time-dur" onclick="window.HB.toggleTimeDisplay()"
+                class="text-[11px] font-mono text-[var(--text-secondary)] w-8 select-none cursor-pointer hover:text-amber-300"
+                title="Нажмите для переключения">0:30</span>
         </div>
       </div>
 
       <!-- Volume & Queue Status -->
-      <div class="hidden md:flex items-center justify-end gap-3 w-64">
-        <span id="player-mode-badge" class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+      <div class="hidden md:flex items-center justify-end gap-3 w-72">
+        <span id="player-mode-badge" class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold truncate max-w-[130px]">
           Готов к эфиру
         </span>
-        <div class="flex items-center gap-1.5 w-24">
-          <span class="text-xs">🔊</span>
+        <div class="flex items-center gap-1.5 w-28">
+          <button id="player-mute-btn" onclick="window.HB.toggleMute()" class="text-xs text-[var(--text-secondary)] hover:text-white cursor-pointer" title="Без звука (M)">
+            🔊
+          </button>
           <input id="player-volume" type="range" min="0" max="1" step="0.02" value="0.85"
                  oninput="window.HB.setVolume(this.value)" class="hb-slider" />
         </div>
@@ -567,7 +741,7 @@
   </div>
 
   <!-- Preloaded Live Dataset (Works offline & via file:// AND syncs with server.py / GitHub Pages) -->
-  <script src="data/trends_data.js?v=20261102_2"></script>
-  <script src="app.js?v=20261102_2"></script>
+  <script src="data/trends_data.js?v=20261103_1"></script>
+  <script src="app.js?v=20261103_1"></script>
 </body>
 </html>
