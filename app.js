@@ -347,11 +347,11 @@
         </div>
       </div>
 
-      <!-- Card 4: Unfiltered New Releases Firehose (0+ Views) -->
+      <!-- Card 4: Unfiltered New Releases Firehose -->
       <div class="hb-card p-4 flex flex-col justify-between border border-emerald-500/30 bg-emerald-950/10">
         <div class="flex items-center justify-between gap-2 mb-2">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-            📡 Поток новинок 0+ (${fhAll.length})
+            📡 Все новинки (${fhAll.length})
           </span>
           <span class="text-[11px] text-emerald-300 font-semibold">Без цензуры чартов</span>
         </div>
@@ -377,7 +377,7 @@
         <div class="pt-2 border-t border-[var(--border-subtle)]">
           <button onclick="window.HB.openFirehoseUnfiltered()"
                   class="w-full py-1.5 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition cursor-pointer">
-            📡 Открыть все ${fhAll.length} новинок (от 0 просм.) →
+            📡 Открыть все новинки (${fhAll.length}) →
           </button>
         </div>
       </div>
@@ -880,7 +880,7 @@
   }
 
   // =========================================================================
-  // RENDERING: TAB 1.5 — ВСЕ НОВИНКИ 0+ (НЕФИЛЬТРОВАННЫЙ ПОТОК)
+  // RENDERING: TAB 1.5 — ВСЕ НОВИНКИ (НЕФИЛЬТРОВАННЫЙ ПОТОК)
   // =========================================================================
 
   function getTierPillClass(tierId) {
@@ -964,57 +964,67 @@
     return base;
   }
 
+  function getTierDisplay(tierId) {
+    if (tierId === "micro") return "🌱 Новое имя";
+    if (tierId === "underground") return "🔍 Андеграунд";
+    if (tierId === "mid") return "📈 Набирает ход";
+    return "🔥 Премьера";
+  }
+
   function renderFirehoseCardHtml(item, idx) {
     const isPlayingThis = STATE.currentTrack && STATE.currentTrack.id === item.id && STATE.isPlaying;
     const tierCls = getTierPillClass(item.tier_id);
     const srcCls = getSourcePillClass(item.source_id);
+    const tierDisplay = getTierDisplay(item.tier_id);
     const extUrl = item.youtube_url || item.apple_music_url || item.deezer_url || "";
 
     return `
-      <div class="hb-card hb-card-interactive p-4 flex flex-col justify-between gap-3 relative ${
-        isPlayingThis ? "ring-2 ring-emerald-400 bg-emerald-950/15" : ""
+      <div class="hb-card hb-card-interactive p-3.5 flex flex-col justify-between gap-2.5 relative ${
+        isPlayingThis ? "ring-2 ring-emerald-400 bg-emerald-950/20" : ""
       }">
         <div>
-          <!-- Top Source & Views Scale Row -->
-          <div class="flex items-center justify-between gap-1.5 mb-2.5 flex-wrap">
-            <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${srcCls}">
-              ${escapeHtml(item.source_label)}
-            </span>
-            <div class="flex items-center gap-1.5">
-              <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${tierCls}">
-                ${escapeHtml(item.tier_label)}
+          <!-- Top Tags & Quick Tools -->
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-1.5 overflow-hidden">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${srcCls} truncate">
+                ${escapeHtml(item.source_label)}
               </span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${tierCls} truncate">
+                ${tierDisplay}
+              </span>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
               <button onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')"
-                      class="w-6 h-6 rounded-md bg-white/5 hover:bg-white/15 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
-                      title="Инфо и телеметрия">
+                      class="w-6 h-6 rounded-md bg-[var(--bg-elevated)] hover:bg-white/10 flex items-center justify-center text-[11px] text-[var(--text-secondary)] transition cursor-pointer"
+                      title="Информация о треке">
                 ℹ️
               </button>
               <button onclick="window.HB.shareTrack('${escapeHtml(item.id)}')"
-                      class="w-6 h-6 rounded-md bg-white/5 hover:bg-white/15 flex items-center justify-center text-xs text-[var(--text-secondary)] transition cursor-pointer"
+                      class="w-6 h-6 rounded-md bg-[var(--bg-elevated)] hover:bg-white/10 flex items-center justify-center text-[11px] text-[var(--text-secondary)] transition cursor-pointer"
                       title="Поделиться">
                 🔗
               </button>
             </div>
           </div>
 
-          <!-- Cover + Track Metadata -->
-          <div class="flex items-start gap-3.5">
-            <div class="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black cursor-pointer group"
+          <!-- Cover + Meta Info -->
+          <div class="flex items-start gap-3">
+            <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-black/40 border border-white/10 cursor-pointer group"
                  onclick="${
                    item.youtube_video_id
                      ? `window.HB.openFirehoseVideo('${escapeHtml(item.id)}')`
                      : `window.HB.playFirehoseById('${escapeHtml(item.id)}')`
                  }">
               <img src="${escapeHtml(item.artwork_url || "")}" alt="" loading="lazy"
-                   class="w-full h-full object-cover group-hover:scale-105 transition" />
+                   class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                <span class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold shadow">
+                <span class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shadow">
                   ${item.youtube_video_id ? "🎬" : "▶"}
                 </span>
               </div>
               ${
                 item.duration_text
-                  ? `<span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-mono text-white">${escapeHtml(
+                  ? `<span class="absolute bottom-1 right-1 px-1 py-0.2 rounded bg-black/75 text-[9px] font-mono text-white/90">${escapeHtml(
                       item.duration_text
                     )}</span>`
                   : ""
@@ -1023,54 +1033,41 @@
 
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="text-[11px] font-bold text-[var(--text-muted)]">#${idx}</span>
                 <span class="text-xs font-bold text-amber-400 truncate">${escapeHtml(item.artist)}</span>
                 ${
                   item.is_ai
-                    ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">🤖 AI</span>`
+                    ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">AI</span>`
                     : ""
                 }
               </div>
-              <h3 class="text-sm sm:text-base font-extrabold leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:underline"
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-400 transition"
                   title="${escapeHtml(item.full_title)}"
                   onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')">
                 ${escapeHtml(item.title)}
               </h3>
-              <div class="text-[11px] text-[var(--text-muted)] truncate mt-1">
-                Канал / Источник: <strong class="text-[var(--text-secondary)]">${escapeHtml(item.channel)}</strong> • ${escapeHtml(item.genre)}
-              </div>
-            </div>
-          </div>
-
-          <!-- Published Time & Views Telemetry Box -->
-          <div class="grid grid-cols-2 gap-2 mt-3 p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs">
-            <div>
-              <div class="text-[10px] uppercase text-[var(--text-muted)]">Когда вышло</div>
-              <div class="font-bold text-emerald-300 truncate mt-0.5">🕒 ${escapeHtml(item.published_text)}</div>
-            </div>
-            <div>
-              <div class="text-[10px] uppercase text-[var(--text-muted)]">Просмотры / Статус</div>
-              <div class="font-bold text-[var(--text-primary)] truncate mt-0.5">
-                👁 ${item.views > 0 ? fmtNum(item.views) + " просм." : escapeHtml(item.views_text)}
+              <div class="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-1.5">
+                <span class="text-emerald-400 font-medium">🕒 ${escapeHtml(item.published_text)}</span>
+                <span>•</span>
+                <span>👁 ${item.views > 0 ? fmtNum(item.views) : escapeHtml(item.views_text)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="flex items-center gap-2 pt-1">
+        <!-- Clean Action Row -->
+        <div class="flex items-center gap-2 pt-2 border-t border-[var(--border-subtle)]/50 mt-0.5">
           <button onclick="window.HB.playFirehoseById('${escapeHtml(item.id)}')"
-                  class="flex-1 py-2 px-3 rounded-xl text-xs font-bold ${
+                  class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold ${
                     isPlayingThis
                       ? "bg-amber-500 text-slate-950 shadow"
                       : "bg-emerald-600 hover:bg-emerald-500 text-white"
                   } transition cursor-pointer">
-            ${isPlayingThis ? "⏸ Играет" : item.preview_url ? "▶ Слушать (30с)" : "▶ Слушать"}
+            ${isPlayingThis ? "⏸ Играет" : item.preview_url ? "▶ Слушать" : "▶ Слушать"}
           </button>
           ${
             item.youtube_video_id
               ? `<button onclick="window.HB.openFirehoseVideo('${escapeHtml(item.id)}')"
-                         class="py-2 px-3 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition cursor-pointer">
+                         class="py-1.5 px-3 rounded-lg text-xs font-medium bg-[var(--bg-elevated)] hover:bg-white/10 text-[var(--text-secondary)] border border-[var(--border-subtle)] transition cursor-pointer">
                    🎬 Клип
                  </button>`
               : ""
@@ -1078,7 +1075,7 @@
           ${
             extUrl
               ? `<a href="${escapeHtml(extUrl)}" target="_blank" rel="noopener"
-                    class="py-2 px-2.5 rounded-xl text-xs bg-[var(--bg-elevated)] hover:bg-white/10 text-[var(--text-secondary)] border border-[var(--border-subtle)] transition"
+                    class="py-1.5 px-2.5 rounded-lg text-xs bg-[var(--bg-elevated)] hover:bg-white/10 text-[var(--text-secondary)] border border-[var(--border-subtle)] transition"
                     title="Открыть оригинал">↗</a>`
               : ""
           }
@@ -1092,80 +1089,77 @@
       <div class="hb-card overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="border-b border-[var(--border-subtle)] text-xs font-bold uppercase text-[var(--text-muted)] bg-[var(--bg-elevated)]">
-              <th class="py-3 px-4 w-12">#</th>
-              <th class="py-3 px-4">Когда вышло</th>
-              <th class="py-3 px-4">Артист и Новая Песня</th>
-              <th class="py-3 px-4">Источник и Жанр</th>
-              <th class="py-3 px-4 text-right">Просмотры / Масштаб</th>
-              <th class="py-3 px-4 text-right">Слушать / Видео</th>
+            <tr class="border-b border-[var(--border-subtle)] text-[11px] font-semibold uppercase text-[var(--text-muted)] bg-[var(--bg-elevated)]">
+              <th class="py-2.5 px-3 w-10">#</th>
+              <th class="py-2.5 px-3">Релиз</th>
+              <th class="py-2.5 px-3">Источник</th>
+              <th class="py-2.5 px-3">Дата</th>
+              <th class="py-2.5 px-3 text-right">Просмотры</th>
+              <th class="py-2.5 px-3 text-right">Действия</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[var(--border-subtle)] text-sm">
+          <tbody class="divide-y divide-[var(--border-subtle)] text-xs">
             ${items
               .map((item, i) => {
                 const isPlayingThis = STATE.currentTrack && STATE.currentTrack.id === item.id && STATE.isPlaying;
                 const tierCls = getTierPillClass(item.tier_id);
+                const tierDisplay = getTierDisplay(item.tier_id);
                 const extUrl = item.youtube_url || item.apple_music_url || item.deezer_url || "";
                 return `
                   <tr class="hover:bg-white/5 transition ${isPlayingThis ? "bg-emerald-500/10" : ""}">
-                    <td class="py-3 px-4 font-bold text-[var(--text-muted)]">${i + 1}</td>
-                    <td class="py-3 px-4 whitespace-nowrap">
-                      <span class="text-xs font-bold text-emerald-300">🕒 ${escapeHtml(item.published_text)}</span>
-                      ${
-                        item.duration_text
-                          ? `<div class="text-[11px] font-mono text-[var(--text-muted)]">⏱ ${escapeHtml(item.duration_text)}</div>`
-                          : ""
-                      }
-                    </td>
-                    <td class="py-3 px-4">
-                      <div class="flex items-center gap-3">
-                        <img src="${escapeHtml(item.artwork_url || "")}" alt="" class="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                        <div class="min-w-0">
-                          <div class="font-bold truncate max-w-md cursor-pointer hover:underline"
+                    <td class="py-2.5 px-3 text-[var(--text-muted)] font-medium">${i + 1}</td>
+                    <td class="py-2.5 px-3">
+                      <div class="flex items-center gap-2.5">
+                        <img src="${escapeHtml(item.artwork_url || "")}" alt="" class="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                        <div class="min-w-0 max-w-xs sm:max-w-md">
+                          <div class="font-semibold truncate cursor-pointer hover:text-emerald-400"
                                title="${escapeHtml(item.full_title)}"
                                onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')">
                             ${escapeHtml(item.title)}
-                            ${item.is_ai ? `<span class="ml-1 text-[10px] text-purple-300">[🤖 AI]</span>` : ""}
+                            ${item.is_ai ? `<span class="ml-1 text-[10px] text-purple-300">[AI]</span>` : ""}
                           </div>
-                          <div class="text-xs text-amber-400 font-medium truncate max-w-md">
-                            ${escapeHtml(item.artist)} <span class="text-[var(--text-muted)]">• ${escapeHtml(item.channel)}</span>
+                          <div class="text-[11px] text-amber-400 truncate">
+                            ${escapeHtml(item.artist)}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td class="py-3 px-4">
-                      <div class="text-xs font-semibold">${escapeHtml(item.source_label)}</div>
-                      <div class="text-[11px] text-[var(--text-muted)]">${escapeHtml(item.genre)}</div>
-                    </td>
-                    <td class="py-3 px-4 text-right whitespace-nowrap">
-                      <div class="font-bold">${item.views > 0 ? fmtNum(item.views) + " просм." : escapeHtml(item.views_text)}</div>
-                      <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold border ${tierCls}">
-                        ${escapeHtml(item.tier_label)}
+                    <td class="py-2.5 px-3">
+                      <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${getSourcePillClass(item.source_id)}">
+                        ${escapeHtml(item.source_label)}
                       </span>
                     </td>
-                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                    <td class="py-2.5 px-3 whitespace-nowrap text-emerald-400 font-medium">
+                      🕒 ${escapeHtml(item.published_text)}
+                    </td>
+                    <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                      <div class="font-semibold">${item.views > 0 ? fmtNum(item.views) : escapeHtml(item.views_text)}</div>
+                      <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] font-semibold border ${tierCls}">
+                        ${tierDisplay}
+                      </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-right whitespace-nowrap">
                       <button onclick="window.HB.playFirehoseById('${escapeHtml(item.id)}')"
-                              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white mr-1.5 cursor-pointer">
+                              class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white mr-1 cursor-pointer">
                         ${isPlayingThis ? "⏸" : "▶"}
                       </button>
                       ${
                         item.youtube_video_id
                           ? `<button onclick="window.HB.openFirehoseVideo('${escapeHtml(item.id)}')"
-                                     class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 mr-1.5 cursor-pointer">
+                                     class="px-2 py-1 rounded-lg text-xs bg-[var(--bg-elevated)] hover:bg-white/10 text-[var(--text-secondary)] mr-1 cursor-pointer">
                                🎬
                              </button>`
                           : ""
                       }
                       <button onclick="window.HB.openTrackDetailModal('${escapeHtml(item.id)}')"
-                              class="px-2 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)] mr-1 cursor-pointer"
+                              class="px-1.5 py-1 rounded-lg text-xs bg-[var(--bg-elevated)] hover:bg-white/10 text-[var(--text-secondary)] mr-1 cursor-pointer"
                               title="Инфо">
                         ℹ️
                       </button>
                       ${
                         extUrl
                           ? `<a href="${escapeHtml(extUrl)}" target="_blank" rel="noopener"
-                                class="px-2 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/15 text-[var(--text-secondary)]">↗</a>`
+                                class="px-1.5 py-1 rounded-lg text-xs bg-[var(--bg-elevated)] hover:bg-white/10 text-[var(--text-secondary)]">↗</a>`
                           : ""
                       }
                     </td>
@@ -1191,7 +1185,7 @@
     const microTotal = (STATE.data.firehose_releases || []).filter((x) => x.tier_id === "micro").length;
     const pill = document.getElementById("firehose-stats-pill");
     if (pill) {
-      pill.textContent = `В базе потока: ${totalAll} релизов (из них ${microTotal} — малые/слабые релизы 0–1.5K просм. и синглы вне чартов)`;
+      pill.textContent = `Всего ${totalAll} релизов • ${microTotal} новых имён`;
     }
 
     if (items.length === 0) {
@@ -1240,7 +1234,7 @@
         youtube_published: item.published_text,
       },
       currentList,
-      "Все Новинки 0+"
+      "Все новинки"
     );
   }
 
@@ -1267,7 +1261,7 @@
     if (listToUse.length === 0) return;
     STATE.currentTrack = null;
     playFirehoseById(listToUse[0].id);
-    showToast(`Запущен поток новинок 0+ (${listToUse.length} релизов)`, "📡");
+    showToast(`Запущен поток новинок (${listToUse.length} релизов)`, "📡");
   }
 
   // =========================================================================
@@ -1890,7 +1884,7 @@
 
   function shareStation() {
     const url = "https://haykohanyans.github.io/haybeat-armenian-music/";
-    const text = `HAYBEAT 🇦🇲 — Радар Трендов Армянской Музыки (Apple Music AM, YouTube AM, все новинки 0+)\n${url}`;
+    const text = `HAYBEAT 🇦🇲 — Радар Трендов Армянской Музыки (Apple Music AM, YouTube AM, все новинки)\n${url}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => {
         showToast("Ссылка на станцию скопирована в буфер обмена!", "🔗");
@@ -2317,7 +2311,7 @@
             STATE.data = res.data;
             renderAll();
             const fhCount = (res.data.firehose_releases || []).length;
-            showToast(`Данные обновлены! Чарты: ${res.data.tracks.length}, Поток новинок 0+: ${fhCount}`, "✅");
+            showToast(`Данные обновлены! Чарты: ${res.data.tracks.length}, Новинки: ${fhCount}`, "✅");
             return;
           }
         }
@@ -2335,7 +2329,7 @@
             STATE.data = cloudData;
             renderAll();
             const fhCount = (cloudData.firehose_releases || []).length;
-            showToast(`Синхронизирован облачный срез! Чарты: ${cloudData.tracks.length}, Новинки 0+: ${fhCount}`, "✅");
+            showToast(`Синхронизирован облачный срез! Чарты: ${cloudData.tracks.length}, Новинки: ${fhCount}`, "✅");
             return;
           }
         }

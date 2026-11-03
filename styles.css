@@ -230,6 +230,13 @@ body {
   border-color: #e11d48;
   box-shadow: 0 3px 12px rgba(225, 29, 72, 0.35);
 }
+.chip-btn[data-fh-tier].active,
+.chip-btn[data-fh-src].active {
+  background: #059669;
+  border-color: #059669;
+  box-shadow: 0 3px 12px rgba(5, 150, 105, 0.35);
+}
+
 
 /* Vibe Pills Bar */
 .vibe-pill {
